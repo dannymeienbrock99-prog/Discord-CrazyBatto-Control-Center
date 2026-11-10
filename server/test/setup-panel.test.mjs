@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {withCommunitySqlite} from './helpers/community-fixture-store.mjs';
 import assert from 'node:assert/strict';
 import { SetupPanel, SETUP_PANEL_ACTIONS } from '../src/setup-panel.mjs';
 import { CommunityControl } from '../src/community-control.mjs';
@@ -29,6 +30,7 @@ function fixture() {
     if(existing){const message=messages.get(existing[2]);if(!message)throw new AppError('forbidden','Nachricht fehlt.',404);if(method==='GET')return structuredClone(message);if(method==='PATCH'){Object.assign(message,structuredClone(payload));return structuredClone(message);}}
     throw Error('Unexpected fixture request '+method+' '+route);
   }}};
+  withCommunitySqlite(service.accounts.store);
   service.communityControl=new CommunityControl(service,{now:()=>state.now});
   let panel=new SetupPanel(service,{now:()=>++state.now});
   const run=(action,payload={},ctx=admin)=>panel.run(ctx,action,{guildId:GUILD,...payload});

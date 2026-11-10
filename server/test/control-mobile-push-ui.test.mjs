@@ -117,3 +117,10 @@ test('a verified setup approval notice opens the fixed setups tab; unknown desti
   await f.push({...payload(),url:'/control-center/?view=unknown'});await f.click('/control-center/?view=setups&redirect=https://outside.invalid/');
   assert.equal(f.shown.length,1);assert.equal(f.opened.length,1);
 });
+
+test('member report notification opens only the reports review tab after owner verification',async()=>{
+  const f=worker(async()=>({ok:true,status:200,json:async()=>({user:{id:OWNER}})}));
+  await f.push({...payload(),tag:'cb-control-community_report-'+EVENT,url:'/control-center/?view=reports',body:'Eine Mitgliedermeldung wartet auf deine Prüfung.'});
+  assert.equal(f.shown.length,1);assert.equal(f.shown[0].silent,false);await f.click(f.shown[0].data.url);
+  assert.equal(f.opened[0],'https://crazybatto.de/control-center/?view=reports');
+});

@@ -1,6 +1,8 @@
 import { randomUUID, randomBytes } from 'node:crypto';
 import { AppError, assert } from './errors.mjs';
 import { P, has, basePermissions, channelPermissions } from './permissions.mjs';
+import { CONTROL_UUID, ensureControlNotices, controlNotice } from './control-members.mjs';
+import { reportRecord, recoverInterruptedReports, moderateReport } from './community-moderation.mjs';
 import { COMMUNITY_ACTIONS, COMMUNITY_BOT_ID, CID, REPORT_CATEGORIES, communityDefaults, validateSection, text, discordId, safeName, embedMessage, renderTemplate, avatarUrl, ephemeral } from './community-schema.mjs';
 export { COMMUNITY_ACTIONS } from './community-schema.mjs';
 
@@ -25,22 +27,25 @@ export class CommunityControl {
     this.setTimer = setTimer; this.clearTimer = clearTimer; this.pending = new Set(); this.stopping = false;
     this.runtime = { membersIntentAllowed: false, membersIntentRequired: true, memberIntentMessage: 'Mitgliederzugriff wird beim Verbinden geprüft.', lastError: null, lastCounterAt: null, memberCount: null };
     this.counterPending = false; this.tickRunning = false;
+    ensureControlNotices(this.store);
+    this.store.db.exec('CREATE TABLE IF NOT EXISTS community_report_notice_receipts(report_id TEXT PRIMARY KEY,created_at INTEGER NOT NULL)');
+    recoverInterruptedReports(this);
   }
   data() {
     const raw = this.store.setting(KEY);
     if (!raw) return { revision: 0, settings: communityDefaults(), commands: {}, publications: {}, publishAttempts: {}, limits: [], reports: [], tickets: [], forms: [], handled: [], joins: [], events: [] };
     let data; try { data = JSON.parse(raw); } catch { throw new AppError('storage', 'Die Community-Einstellungen können nicht gelesen werden.', 503); }
     assert(data && Number.isSafeInteger(data.revision) && data.settings && Array.isArray(data.reports) && Array.isArray(data.tickets), 'Die Community-Daten sind ungültig.', 'storage', 503);
-    return { commands: {}, publications: {}, publishAttempts: {}, limits: [], forms: [], handled: [], joins: [], events: [], ...data };
+    return { commands: {}, publications: {}, publishAttempts: {}, limits: [], forms: [], handled: [], joins: [], events: [], ...data, reports: data.reports.map(reportRecord) };
   }
   mutate(fn) {
     return this.store.transaction(() => { const data = this.data(); const result = fn(data); this.store.setSetting(KEY, JSON.stringify(data)); return result; });
   }
   current(context) { if (context) this.service.accounts.assertCurrent(context, { admin: true }); }
   identity() { assert(this.config.clientId === COMMUNITY_BOT_ID && !!this.config.botToken && CID.test(this.config.discordGuildId), 'Die Community-Steuerung gehört zum vorhandenen Crazy_Batto-Bot.', 'unconfigured', 503); }
-  async request(context, method, route, payload) {
+  async request(context, method, route, payload, options = {}) {
     this.identity(); this.current(context);
-    return this.service.discord.request(method, route, payload === undefined ? {} : { payload });
+    return this.service.discord.request(method, route, { ...options, ...(payload === undefined ? {} : { payload }) });
   }
   async authority(context, flag = 0n, channelId = '') {
     this.current(context); this.identity();
@@ -104,7 +109,7 @@ export class CommunityControl {
     if (action === 'community.save') return this.save(context, payload);
     if (action === 'community.publish') return this.publish(context, payload);
     if (action === 'community.register') return this.register(context);
-    if (action === 'community.report.moderate') return this.moderate(context, payload);
+    if (action === 'community.report.moderate') return this.track(this.moderate(context, payload));
     if (action === 'community.voice.control') return this.voiceControl(context, payload);
     if (action === 'community.ticket.close') return this.closeTicket(context, payload);
   }
@@ -340,24 +345,25 @@ export class CommunityControl {
     const auth = await this.authority(null, 0n, settings.channelId); this.privateInbox(auth, settings.staffRoleIds);
     const target = await this.request(null, 'GET', `/guilds/${auth.guild.id}/members/${targetId}`);
     assert(target?.user?.id === targetId, 'Das gemeldete Mitglied wurde nicht gefunden.');
-    const record = { id: randomUUID(), targetId, targetName: safeName(target.user.global_name || target.user.username), reporterId: data.member.user.id, category, categoryLabel: category === null ? 'Nicht angegeben' : REPORT_CATEGORIES[category], reason, details, status: 'open', createdAt: this.now(), action: null, reviewReason: '' };
-    this.mutate(d => { assert(d.settings.reports.enabled && d.settings.reports.channelId === settings.channelId && JSON.stringify(d.settings.reports.staffRoleIds) === JSON.stringify(settings.staffRoleIds), 'Der Meldeeingang wurde inzwischen geändert. Bitte neu beginnen.'); assert(d.reports.length < 1000, 'Der Meldeeingang ist voll. Bitte direkt das Team kontaktieren.', 'capacity', 503); d.reports.unshift(record); });
+    const record = { id: randomUUID(), targetId, targetName: safeName(target.user.global_name || target.user.username), reporterId: data.member.user.id, category, categoryLabel: category === null ? 'Nicht angegeben' : REPORT_CATEGORIES[category], reason, details, status: 'open', createdAt: this.now(), action: null, reviewReason: '', revision: 0, history: [] };
+    this.mutate(d => { assert(d.settings.reports.enabled && d.settings.reports.channelId === settings.channelId && JSON.stringify(d.settings.reports.staffRoleIds) === JSON.stringify(settings.staffRoleIds), 'Der Meldeeingang wurde inzwischen geändert. Bitte neu beginnen.'); assert(d.reports.length < 1000, 'Der Meldeeingang ist voll. Bitte direkt das Team kontaktieren.', 'capacity', 503); d.reports.unshift(record); this.reportNotice(record); });
     try { await this.post(null, auth, { embeds: [{ title: 'Neue vertrauliche Meldung', color: 0xD4AF37, description: reason, fields: [{ name: 'Gemeldetes Mitglied', value: safeName(record.targetName) + ' · ' + targetId }, { name: 'Art des Vorfalls', value: record.categoryLabel }, { name: 'Meldende Person', value: record.reporterId }, { name: 'Zusatzangaben', value: details || 'Keine' }], footer: { text: 'Meldung ' + record.id } }], allowed_mentions: { parse: [] } }); }
     catch { this.mutate(d => { d.reports.find(r => r.id === record.id).notificationFailed = true; }); }
     return 'Deine Meldung wurde vertraulich gespeichert. Das Team kann sie im Control Center prüfen.';
   }
-  async moderate(context, payload) {
-    assert(payload.confirm === true && ['kick', 'ban'].includes(payload.operation), 'Bitte die Moderationsaktion ausdrücklich bestätigen.');
-    const reason = text(payload.reason, 500, 'Moderationsgrund', 5);
-    const report = this.data().reports.find(r => r.id === payload.reportId); assert(report && report.status === 'open', 'Diese Meldung ist nicht mehr offen.');
-    const auth = await this.authority(context, payload.operation === 'kick' ? FLAGS.KICK : FLAGS.BAN); await this.target(context, auth, report.targetId);
-    this.current(context); this.mutate(d => { const row = d.reports.find(r => r.id === report.id); assert(row.status === 'open', 'Diese Meldung wird bereits bearbeitet.', 'conflict', 409); row.status = 'processing'; row.reviewReason = reason; row.action = payload.operation; });
-    try {
-      await this.request(context, payload.operation === 'kick' ? 'DELETE' : 'PUT', `/guilds/${auth.guild.id}/${payload.operation === 'kick' ? 'members' : 'bans'}/${report.targetId}`, payload.operation === 'ban' ? { delete_message_seconds: 0 } : undefined);
-      this.mutate(d => { const row = d.reports.find(r => r.id === report.id); row.status = 'resolved'; row.reviewedAt = this.now(); });
-    } catch (error) { this.mutate(d => { d.reports.find(r => r.id === report.id).status = !(error instanceof AppError) || error.kind === 'uncertain' ? 'uncertain' : 'open'; }); throw error; }
-    try { this.store.audit(context.user.id, 'community.' + payload.operation, report.targetId, { reportId: report.id }); } catch { /* The moderation succeeded; do not prompt a duplicate retry. */ }
-    return { reports: this.data().reports.slice(0, 200) };
+  moderate(context, payload) { return moderateReport(this, context, payload); }
+  reportNotice(record) {
+    if(!CONTROL_UUID.test(record.id)||!Number.isSafeInteger(record.createdAt))return;
+    const receipt=this.store.run('INSERT OR IGNORE INTO community_report_notice_receipts(report_id,created_at) VALUES(?,?)',record.id,record.createdAt);
+    if(receipt.changes===1)controlNotice(this.store,'community_report',record.id,0,record.createdAt);
+  }
+  backfillReportNotices() {
+    this.mutate(data=>{if(data.settings.reports.enabled)for(const record of data.reports)if(record.status==='open')this.reportNotice(record);});
+  }
+  reportNoticeState(event) {
+    const data=this.data(),record=data.reports.find(row=>row.id===event.target_id);
+    if(event.type!=='community_report'||event.revision!==0||!record||['resolved','closed'].includes(record.status))return 'obsolete';
+    return data.settings.reports.enabled&&record.status==='open'?'ready':'paused';
   }
   voiceList() { return { ready: this.service.botGateway?.status().ready === true, members: this.service.botGateway?.voiceMembers?.() || [] }; }
   async voiceControl(context, payload) {
@@ -438,10 +444,11 @@ export class CommunityControl {
     this.runtime.lastCounterAt = this.now(); this.runtime.memberCount = count; this.counterPending = false; return { count, name };
   }
   track(promise) { this.pending.add(promise); promise.finally(() => this.pending.delete(promise)).catch(() => {}); return promise; }
-  start() { if (this.timer) return; this.stopping = false; this.timer = this.setTimer(() => this.track(this.tick().catch(() => { this.runtime.lastError = 'Ein automatischer Community-Schritt konnte nicht abgeschlossen werden.'; })), 60_000); this.timer?.unref?.(); }
+  start() { if (this.timer) return; this.stopping = false; this.backfillReportNotices(); this.timer = this.setTimer(() => this.track(this.tick().catch(() => { this.runtime.lastError = 'Ein automatischer Community-Schritt konnte nicht abgeschlossen werden.'; })), 60_000); this.timer?.unref?.(); }
   async tick() {
     if (this.tickRunning || this.stopping) return; this.tickRunning = true;
     try {
+      this.backfillReportNotices();
       if (this.data().settings.counter.enabled && (this.counterPending || !this.runtime.lastCounterAt || this.now() - this.runtime.lastCounterAt > 600_000)) {
         try { await this.updateCounter(null); } catch { this.runtime.lastError = 'Der Mitgliederzähler konnte noch nicht aktualisiert werden.'; }
       }

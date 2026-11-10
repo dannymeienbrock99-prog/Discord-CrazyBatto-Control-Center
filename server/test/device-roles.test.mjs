@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {withCommunitySqlite} from './helpers/community-fixture-store.mjs';
 import assert from 'node:assert/strict';
 import { DeviceRoles, DEVICE_ROLES } from '../src/device-roles.mjs';
 import { CommunityControl } from '../src/community-control.mjs';
@@ -28,6 +29,7 @@ function fixture() {
     if(method==='PATCH'&&route.startsWith('/webhooks/'))return null;
     throw Error('Unexpected fixture request '+method+' '+route);
   }}};
+  withCommunitySqlite(service.accounts.store);
   const community=service.communityControl=new CommunityControl(service),roles=service.deviceRoles=new DeviceRoles(service);
   const config=()=>({revision:roles.data().revision,mapping:{...roleIds},channelId:CHANNEL,enabled:true,confirm:true});
   const setup=async()=>{await roles.run(context,'roles.save',config());await roles.run(context,'roles.publish',{confirm:true});calls.length=0;};

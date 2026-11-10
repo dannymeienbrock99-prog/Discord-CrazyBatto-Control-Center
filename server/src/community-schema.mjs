@@ -74,3 +74,6 @@ export function avatarUrl(user) {
   return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
 }
 export const ephemeral = content => ({ type: 4, data: { content, flags: 64, allowed_mentions: { parse: [] } } });
+
+export const REPORT_MODERATION_OPERATIONS = Object.freeze(['warn','mute','unmute','timeout','untimeout','kick','ban','close']);
+export const REPORT_TIMEOUT_MAX_SECONDS = 28 * 24 * 60 * 60;

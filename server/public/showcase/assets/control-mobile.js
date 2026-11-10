@@ -1,9 +1,15 @@
 import {$,el,api,notify,loadSession,login,currentSession,clearSession,cents,money,date,statuses,button} from './control-client.js';
-let view=['members','setups','support','robot'].includes(new URL(location.href).searchParams.get('view'))?new URL(location.href).searchParams.get('view'):'members',cursor=null,version=0,registration=null;
+let view=['members','reports','setups','support','robot'].includes(new URL(location.href).searchParams.get('view'))?new URL(location.href).searchParams.get('view'):'members',cursor=null,version=0,registration=null;
 let detailVersion=0,cancelConfirmation=null,authVersion=0,logoutBusy=false,pushVersion=0;
 const setupNames={draft:'Entwurf',pending:'Wartet auf Freigabe',published:'Veröffentlicht',hidden:'Ausgeblendet',withdrawn:'Vom Mitglied zurückgezogen'};
 const setupDelivery={none:'Noch kein Discord-Versand',queued:'Für Discord vorgemerkt',sending:'Wird an Discord gesendet',sent:'Discord hat bestätigt',failed:'Discord-Versand fehlgeschlagen',uncertain:'Discord-Versand ungeklärt',superseded:'Durch neueren Stand ersetzt'};
 const setupSpecs={cpu:'Prozessor',gpu:'Grafikkarte',ram:'Arbeitsspeicher',storage:'Speicher',mainboard:'Mainboard',cooling:'Kühlung',case:'Gehäuse',monitor:'Monitor',peripherals:'Zubehör'};
+const reportNames={open:'Offen',processing:'Wird bearbeitet',uncertain:'Ergebnis unklar · Discord prüfen',resolved:'Abgeschlossen'};
+const reportOperations={warn:'Abmahnen · private Nachricht',mute:'Im Sprachkanal stummschalten',unmute:'Server-Stummschaltung aufheben',timeout:'Zeitweise sperren · Discord-Timeout',untimeout:'Discord-Timeout aufheben',kick:'Vom Server kicken',ban:'Vom Server bannen',close:'Fall abschließen'};
+const reportEffects={warn:'Der Bot sendet der gemeldeten Person eine echte private Discord-Nachricht mit deiner Begründung. Die Nachricht kann von der Person gelesen werden.',mute:'Die Person wird serverseitig im Sprachkanal stummgeschaltet. Sie kann dort nicht sprechen. Textnachrichten bleiben möglich.',unmute:'Die serverseitige Stummschaltung im Sprachkanal wird aufgehoben. Eine eigene Mikrofon-Stummschaltung der Person bleibt bestehen.',timeout:'Die Person bleibt auf dem Server, kann während des Discord-Timeouts aber keine Nachrichten senden und nicht an Sprach- oder Videochats teilnehmen.',untimeout:'Der aktive Discord-Timeout wird aufgehoben. Die normalen Rollenrechte gelten wieder.',kick:'Die Person wird vom Discord-Server entfernt. Mit einer gültigen Einladung kann sie wieder beitreten.',ban:'Die Person wird vom Server gebannt und kann erst nach Aufhebung des Banns wieder beitreten. Frühere Nachrichten werden durch diese Aktion nicht gelöscht.',close:'Nur dieser Meldefall wird abgeschlossen. Bereits ausgeführte Discord-Maßnahmen bleiben bestehen.'};
+const reportDurations=[[60,'1 Minute'],[300,'5 Minuten'],[600,'10 Minuten'],[3600,'1 Stunde'],[86400,'1 Tag'],[604800,'7 Tage'],[2419200,'28 Tage']];
+function reportState(value){if(!value||!Array.isArray(value.reports))throw Error('Die Meldungen konnten nicht vollständig geladen werden. Bitte aktualisieren.');return value;}
+function reportAllowed(item){if(!Number.isSafeInteger(item.revision)||item.revision<0)return [];return item.status==='open'?Object.keys(reportOperations):item.status==='uncertain'?['close']:item.status==='resolved'?['unmute','untimeout']:[];}
 async function setupAction(action,payload={}){const response=await api('/api/admin/discord-control/action',{method:'POST',body:{action,payload}});return response.result;}
 function setupState(value){if(!value||!Array.isArray(value.entries)||!value.settings||typeof value.settings.enabled!=='boolean')throw Error('Die Setup-Daten konnten nicht vollständig geladen werden. Bitte aktualisieren.');return value;}
 function invalidateDetail(){detailVersion++;cancelConfirmation?.();$('#detail').replaceChildren();$('#detail').hidden=true;}
@@ -35,8 +41,15 @@ for(const tab of document.querySelectorAll('[data-view]'))tab.addEventListener('
 function keyValue(parent,values){const dl=el('dl',undefined,'detail-grid');for(const [key,value] of values){dl.append(el('dt',key),el('dd',value==null?'–':String(value)));}parent.append(dl);}
 function finishDetail(){const box=$('#detail');box.hidden=false;box.scrollIntoView({behavior:'smooth',block:'start'});}
 async function load(more=false){
-  const current=++version,section=view;if(!more){cursor=null;$('#records').replaceChildren();}for(const tab of document.querySelectorAll('[data-view]'))tab.setAttribute('aria-selected',String(tab.dataset.view===section));$('#setup-filter-label').hidden=section!=='setups';
+  const current=++version,section=view;if(!more){cursor=null;$('#records').replaceChildren();}for(const tab of document.querySelectorAll('[data-view]'))tab.setAttribute('aria-selected',String(tab.dataset.view===section));$('#setup-filter-label').hidden=section!=='setups';$('#report-filter-label').hidden=section!=='reports';
   const search=$('#search').value.trim();let result;
+  if(section==='reports'){
+    result=reportState(await setupAction('community.report.list'));if(current!==version)return;$('#more').hidden=true;const filter=$('#report-filter').value||'active',term=search.toLocaleLowerCase('de-DE');
+    const rows=result.reports.filter(item=>(filter==='all'||(filter==='active'?['open','processing','uncertain'].includes(item.status):item.status===filter))&&(!term||[item.targetName,item.targetId,item.reporterId,item.categoryLabel,item.reason].some(value=>String(value||'').toLocaleLowerCase('de-DE').includes(term))));
+    $('#summary').textContent=`${result.reports.filter(item=>['open','uncertain'].includes(item.status)).length} Meldungen zu prüfen · ${rows.length} angezeigt · bis zu 200 aktuelle Fälle`;
+    if(!rows.length)$('#records').append(el('p',filter==='active'&&!search?'Aktuell sind keine Meldungen zu prüfen. Unter „Alle“ findest du auch abgeschlossene Fälle.':'Keine Meldungen für diese Auswahl gefunden.','empty'));
+    for(const item of rows){const row=button('',()=>reportDetail(item.id),true);row.className='list-item';row.append(el('strong',item.targetName||item.targetId),el('small',`${item.categoryLabel||'Vorfall nicht angegeben'} · ${reportNames[item.status]||item.status}`),el('small',date(item.createdAt)));$('#records').append(row);}return;
+  }
   if(section==='setups'){
     result=setupState(await setupAction('setup.state'));if(current!==version)return;$('#more').hidden=true;const filter=$('#setup-filter').value||'pending',term=search.toLocaleLowerCase('de-DE');
     const rows=result.entries.filter(item=>(filter==='all'||(filter==='problem'?['failed','uncertain'].includes(item.discordStatus):item.status===filter))&&(!term||[item.authorName,item.title,item.description].some(value=>String(value||'').toLocaleLowerCase('de-DE').includes(term))));
@@ -51,6 +64,43 @@ async function load(more=false){
   $('#summary').textContent=view==='members'?`${result.counts?.total??rows.length} Mitglieder · ${result.counts?.pending??0} warten auf Freigabe`:view==='robot'?'Synchronisierte Einträge aus deiner Robot-App':`${result.counts?.total??rows.length} PC-Anfragen`;
   if(!rows.length&&!more)$('#records').append(el('p',view==='robot'?'Noch keine synchronisierten Einträge. In der Robot-App die Auftragssynchronisierung starten und das Gerät im PC-Control-Center freigeben.':'Keine Einträge gefunden.','empty'));
   for(const item of rows){const row=button('',()=>section==='members'?memberDetail(item):section==='support'?supportDetail(item.id):robotDetail(item.id),true);row.className='list-item';row.append(el('strong',section==='members'?item.name:section==='support'?item.subject:'Auftrag '+item.orderNumber));row.append(el('small',section==='members'?`${item.email} · ${statuses[item.approval.status]||item.approval.status}${item.confirmed?'':' · E-Mail noch unbestätigt'}`:section==='support'?`${item.author.name} · ${statuses[item.status]||item.status}${item.order.requested?' · '+money(item.order.acceptedCents):''}`:`Robot ${item.robot} · ${item.articleNumber||'Ohne Artikel'} · ${date(item.timestamp)}`));$('#records').append(row);}
+}
+async function reportDetail(id,snapshot=null){
+  invalidateDetail();const current=detailVersion,state=reportState(snapshot||await setupAction('community.report.list'));if(current!==detailVersion)return;
+  const item=state.reports.find(row=>row.id===id);if(!item)throw Error('Diese Meldung ist nicht mehr in der aktuellen Liste. Bitte aktualisieren.');
+  const box=$('#detail');box.replaceChildren(el('div','MELDUNGEN · VERTRAULICHER TEAM-EINGANG','eyebrow'),el('h2',item.targetName||item.targetId),el('span',reportNames[item.status]||item.status,'badge'));
+  keyValue(box,[['Gemeldete Person',item.targetName||'Name nicht verfügbar'],['Discord-Mitglied',item.targetId],['Vorfall',item.categoryLabel||'Nicht angegeben'],['Meldende Person',item.reporterName||item.reporterId],['Eingegangen',date(item.createdAt)],['Fall',item.id]]);
+  box.append(el('h3','Grund der Meldung'),el('p',item.reason,'preserve'));if(item.details)box.append(el('h3','Zusätzliche Angaben'),el('p',item.details,'preserve'));
+  if(item.notificationFailed)box.append(el('p','Die Meldung wurde gespeichert; die zusätzliche Nachricht im Discord-Teameingang konnte nicht bestätigt werden.','muted'));
+  box.append(el('h3','Bisherige Maßnahmen'));const history=el('div',undefined,'report-history');
+  for(const event of item.history||[]){const card=el('article',undefined,'report-history-item');card.append(el('strong',reportOperations[event.operation]||event.operation),el('p',({processing:'Wird bearbeitet',succeeded:'Vom Server bestätigt',failed:'Fehlgeschlagen',uncertain:'Ergebnis unklar – nicht erneut ausführen'})[event.status]||event.status,'muted'),el('p',event.reason||'Keine Begründung hinterlegt.','preserve'));
+    keyValue(card,[['Teamkonto',event.actorId],['Begonnen',date(event.startedAt)],['Abgeschlossen',date(event.finishedAt)],...(event.durationSeconds?[['Dauer',reportDurations.find(([seconds])=>seconds===event.durationSeconds)?.[1]||event.durationSeconds+' Sekunden']]:[]),...(event.timeoutUntil?[['Timeout bis',date(event.timeoutUntil)]]:[])]);if(event.message)card.append(el('p',event.message,'preserve'));history.append(card);
+  }
+  if(!(item.history||[]).length)history.append(el('p',item.reviewReason?`${reportOperations[item.action]||'Bisherige Teamentscheidung'}: ${item.reviewReason}`:'Bisher wurde keine Maßnahme dokumentiert.','muted'));box.append(history);
+  const allowed=reportAllowed(item);if(!allowed.length){box.append(el('p',item.status==='processing'?'Die Maßnahme wird verarbeitet. Aktualisiere zuerst den Fall und führe sie nicht erneut aus.':item.status==='resolved'?'Dieser Fall ist abgeschlossen. Die bisherige Entscheidung bleibt im Verlauf sichtbar.':'Der Versionsstand dieses Falls fehlt. Bitte das Control Center aktualisieren.','muted'),button('Fall aktualisieren',()=>reportDetail(id),true));finishDetail();return;}
+  if(item.status==='uncertain')box.append(el('p','Der Ausgang der letzten Maßnahme ist unklar. Prüfe den tatsächlichen Zustand direkt in Discord. Hier ist ausschließlich das dokumentierte Abschließen des Falls möglich; die Maßnahme wird nicht wiederholt.','report-warning'));
+  if(item.status==='resolved')box.append(el('p','Dieser Fall ist abgeschlossen. Eine noch aktive Stummschaltung oder ein Timeout kann hier aufgehoben werden. Der Fall bleibt abgeschlossen.','muted'));
+  const operationLabel=el('label','Maßnahme auswählen'),operation=el('select');operation.id='report-operation';const placeholder=el('option','Bitte eine Maßnahme auswählen');placeholder.value='';operation.append(placeholder);for(const key of allowed){const option=el('option',reportOperations[key]);option.value=key;operation.append(option);}operationLabel.append(operation);
+  const effect=el('p','Wähle eine Maßnahme, um ihre Wirkung zu sehen.','report-effect'),durationLabel=el('label','Dauer der zeitweisen Sperre'),duration=el('select');duration.id='report-duration';for(const [seconds,label] of reportDurations){const option=el('option',label);option.value=String(seconds);duration.append(option);}duration.value='3600';durationLabel.append(duration);durationLabel.hidden=true;
+  const reasonLabel=el('label','Begründung · erforderlich, 5 bis 500 Zeichen'),reason=el('textarea');reason.id='report-reason';reason.minLength=5;reason.maxLength=500;reason.required=true;reasonLabel.append(reason);
+  const checkedLabel=el('label',undefined,'check'),checked=el('input');checked.type='checkbox';checked.id='report-discord-checked';checkedLabel.append(checked,el('span','Ich habe den tatsächlichen Zustand in Discord geprüft und dokumentiere ihn in der Begründung.'));checkedLabel.hidden=item.status!=='uncertain';
+  operation.addEventListener('change',()=>{effect.textContent=reportEffects[operation.value]||'Wähle eine Maßnahme, um ihre Wirkung zu sehen.';durationLabel.hidden=operation.value!=='timeout';});
+  const action=button('Maßnahme prüfen',async()=>{
+    const choice=operation.value,text=reason.value.trim();if(!allowed.includes(choice))throw Error('Bitte eine Maßnahme auswählen.');if(text.length<5||text.length>500)throw Error('Bitte eine Begründung mit 5 bis 500 Zeichen angeben.');if(item.status==='uncertain'&&!checked.checked)throw Error('Bitte zuerst den tatsächlichen Zustand in Discord prüfen und die Prüfung bestätigen.');
+    const payload={reportId:item.id,operation:choice,reason:text,confirm:true,revision:item.revision};if(item.status==='uncertain')payload.checkedDiscord=true;if(choice==='warn')payload.notifyUser=true;if(choice==='timeout'){payload.durationSeconds=Number(duration.value);if(!reportDurations.some(([seconds])=>seconds===payload.durationSeconds))throw Error('Bitte eine gültige Sperrdauer auswählen.');}
+    const fresh=reportState(await setupAction('community.report.list'));if(current!==detailVersion)return;const latest=fresh.reports.find(row=>row.id===id);
+    if(!latest||latest.revision!==item.revision||latest.status!==item.status||!reportAllowed(latest).includes(choice)){if(latest)await reportDetail(id,fresh);else invalidateDetail();throw Error('Der Fall wurde inzwischen geändert. Bitte den aktuellen Stand prüfen und die Maßnahme neu auswählen.');}
+    const durationText=choice==='timeout'?` Dauer: ${reportDurations.find(([seconds])=>seconds===payload.durationSeconds)[1]}.`:'';
+    if(!await ask(reportOperations[choice]+'?',`${item.targetName||item.targetId} · Discord-ID ${item.targetId}\n${reportEffects[choice]}${durationText}\nBegründung: ${payload.reason}${item.status==='uncertain'?'\nDu hast den tatsächlichen Zustand zuvor in Discord geprüft.':''}`)||current!==detailVersion)return;
+    let failure;try{reportState(await setupAction('community.report.moderate',payload));}catch(error){failure=error;}
+    if(current!==detailVersion)return;
+    if(!failure)notify('Entscheidung gespeichert. Den bestätigten Stand siehst du im Maßnahmenverlauf.');
+    try{await load();if(current!==detailVersion)return;const refreshed=reportState(await setupAction('community.report.list'));if(current===detailVersion)await reportDetail(id,refreshed);}catch(error){
+      if(current!==detailVersion)return;invalidateDetail();const closed=$('#detail');closed.append(el('h2','Aktuellen Fallstand prüfen'),el('p',failure?.message||error.message,'preserve'),el('p','Der aktuelle Stand konnte nicht geladen werden. Führe die Maßnahme nicht erneut aus. Lade zuerst den Fall und prüfe gegebenenfalls Discord.','report-warning'),button('Nur Fall neu laden',()=>reportDetail(id),true));finishDetail();
+    }
+    if(failure)throw Error(failure.message);
+  });
+  box.append(operationLabel,effect,durationLabel,reasonLabel,checkedLabel,action,el('p','Jede Aktion wird vor dem Ausführen einzeln bestätigt. Discord prüft zusätzlich Rechte und Rollenreihenfolge des Bots.','muted'));finishDetail();
 }
 async function setupDetail(id){
   invalidateDetail();const current=detailVersion,state=setupState(await setupAction('setup.state'));if(current!==detailVersion)return;
@@ -96,16 +146,25 @@ async function supportDetail(id){invalidateDetail();const current=detailVersion;
 async function robotDetail(id){invalidateDetail();const current=detailVersion;const result=await api('/api/admin/robot/orders/'+id),item=result.order;if(current!==detailVersion)return;const box=$('#detail');box.replaceChildren(el('div','ROBOT SCHICHTLOG','eyebrow'),el('h2','Auftrag '+item.orderNumber));keyValue(box,[['Artikel',item.articleNumber],['Robot',item.robot],['Menge',item.quantity],['Schicht',item.shift],['Ereignis',item.eventType],['Zeit',date(item.timestamp)],['Gerät',item.deviceLabel],['Letzte Änderung',date(item.updatedAt)]]);box.append(el('p',item.note,'preserve'),el('p',item.handoverNote,'preserve'),el('p','Bearbeiten, nacharbeiten und wiederherstellbar löschen kannst du diesen Eintrag im PC-Control-Center.','muted'));finishDetail();}
 $('#reload').addEventListener('click',()=>{invalidateDetail();void load().catch(error=>notify(error.message,true));});$('#more').addEventListener('click',()=>load(true).catch(error=>notify(error.message,true)));$('#search').addEventListener('keydown',event=>{if(event.key==='Enter'){invalidateDetail();void load().catch(error=>notify(error.message,true));}});
 $('#setup-filter').addEventListener('change',()=>{invalidateDetail();void load().catch(error=>notify(error.message,true));});
-function activeSetupPushVersion(){
+$('#report-filter').addEventListener('change',()=>{invalidateDetail();void load().catch(error=>notify(error.message,true));});
+function activePushCapabilities(){
   const active=registration?.active;
-  if(!active||active.state!=='activated'||typeof MessageChannel!=='function'||!globalThis.crypto?.randomUUID)return Promise.resolve(0);
+  const unavailable=()=>({setupPushVersion:0,reportPushVersion:0});
+  if(!active||active.state!=='activated'||typeof MessageChannel!=='function'||!globalThis.crypto?.randomUUID)return Promise.resolve(unavailable());
   return new Promise(resolve=>{
     const channel=new MessageChannel(),requestId=crypto.randomUUID();let settled=false;
     const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);channel.port1.close();channel.port2.close();resolve(value);};
-    const timer=setTimeout(()=>finish(0),1800);
-    channel.port1.onmessage=event=>{const value=event.data;if(value?.type==='control-push-capabilities'&&value.requestId===requestId)finish(value.setupPushVersion===1&&registration?.active===active&&active.state==='activated'?1:0);};
-    try{active.postMessage({type:'control-push-capabilities',requestId},[channel.port2]);}catch{finish(0);}
+    const timer=setTimeout(()=>finish(unavailable()),1800);
+    channel.port1.onmessage=event=>{const value=event.data;if(value?.type==='control-push-capabilities'&&value.requestId===requestId)finish(registration?.active===active&&active.state==='activated'?{setupPushVersion:value.setupPushVersion===1?1:0,reportPushVersion:value.reportPushVersion===1?1:0}:unavailable());};
+    try{active.postMessage({type:'control-push-capabilities',requestId},[channel.port2]);}catch{finish(unavailable());}
   });
+}
+async function activeSetupPushVersion(){return (await activePushCapabilities()).setupPushVersion;}
+function pushCapabilityText(state){
+  if(state.setupPushVersion===1&&state.reportPushVersion===1)return 'Auf diesem Handy eingeschaltet – auch für Gaming-Setups und Meldungen.';
+  if(state.setupPushVersion===1)return 'Auf diesem Handy eingeschaltet – auch für Gaming-Setups. Meldungen warten auf die App-Aktualisierung. Bitte die App erneut öffnen.';
+  if(state.reportPushVersion===1)return 'Auf diesem Handy eingeschaltet – auch für Meldungen. Gaming-Setup-Hinweise warten auf die App-Aktualisierung. Bitte die App erneut öffnen.';
+  return 'Mitteilungen sind aktiv. Gaming-Setup-Hinweise und Meldungen warten auf die App-Aktualisierung. Bitte die App erneut öffnen.';
 }
 async function preparePushRegistration(){
   registration=await navigator.serviceWorker.register('/control-center/service-worker.js',{scope:'/control-center/'});
@@ -121,27 +180,43 @@ async function pushStatus(){
     await preparePushRegistration();if(!current())return;
     const sub=await registration.pushManager.getSubscription();if(!current())return;
     const state=await api('/api/control-mobile/push');if(!current())return;
-    const setupPushVersion=await activeSetupPushVersion();if(!current())return;
-    const check=sub?await api('/api/control-mobile/push/check',{method:'POST',body:{endpoint:sub.endpoint,setupPushVersion}}):{registered:false};if(!current())return;
+    const capabilities=await activePushCapabilities();if(!current())return;
+    const check=sub?await api('/api/control-mobile/push/check',{method:'POST',body:{endpoint:sub.endpoint,...capabilities}}):{registered:false};if(!current())return;
     const enabled=!!state.enabled&&!!sub&&Notification.permission==='granted'&&check.registered;
-    $('#push-state').textContent=enabled?(check.setupPushVersion===1?'Auf diesem Handy eingeschaltet – auch für Gaming-Setups.':'Mitteilungen sind aktiv. Gaming-Setup-Hinweise warten auf die App-Aktualisierung. Bitte die App erneut öffnen.'):!state.enabled?'Benachrichtigungen sind auf dem Server noch nicht eingerichtet.':Notification.permission==='denied'?'Mitteilungen sind in den Handy-/Browser-Einstellungen gesperrt.':'Noch nicht eingeschaltet';
+    $('#push-state').textContent=enabled?pushCapabilityText(check):!state.enabled?'Benachrichtigungen sind auf dem Server noch nicht eingerichtet.':Notification.permission==='denied'?'Mitteilungen sind in den Handy-/Browser-Einstellungen gesperrt.':'Noch nicht eingeschaltet. Bitte „Ton & Mitteilungen einschalten“ antippen.';
     $('#test-push').disabled=!enabled;$('#disable-push').disabled=!enabled;$('#enable-push').textContent=enabled?'Verbindung erneuern':'Ton & Mitteilungen einschalten';
   }catch(error){if(current())$('#push-state').textContent=error.message;}
 }
 if(navigator.serviceWorker?.addEventListener)navigator.serviceWorker.addEventListener('controllerchange',()=>{if(currentSession()&&!logoutBusy)void pushStatus();});
 $('#enable-push').addEventListener('click',async()=>{
   const sessionVersion=authVersion,current=()=>sessionVersion===authVersion&&!logoutBusy&&!!currentSession();
+  const control=$('#enable-push');if(!current()||control.disabled)return;control.disabled=true;pushVersion++;
+  $('#test-push').disabled=true;$('#disable-push').disabled=true;
   try{
     if(!('Notification'in window)||!('serviceWorker'in navigator))throw Error('Bitte die App mit einem aktuellen Chrome-Browser öffnen.');
     const permission=await Notification.requestPermission();if(!current())return;if(permission!=='granted')throw Error('Bitte Mitteilungen in deinen Handy-Einstellungen erlauben.');
     await preparePushRegistration();if(!current())return;const state=await api('/api/control-mobile/push');if(!current())return;
     if(!state.enabled||!state.publicKey)throw Error('Benachrichtigungen sind auf dem Server noch nicht eingerichtet.');
     const key=Uint8Array.from(atob(state.publicKey.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
-    const sub=await registration.pushManager.getSubscription()||await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key});if(!current())return;
-    const setupPushVersion=await activeSetupPushVersion();if(!current())return;
-    const registered=await api('/api/control-mobile/push',{method:'POST',body:{subscription:sub.toJSON(),setupPushVersion}});if(!current())return;
-    notify(registered.setupPushVersion===1?'Benachrichtigungen eingeschaltet. Über „Testmitteilung senden“ kannst du Ton und Anzeige prüfen.':'Mitteilungen eingeschaltet. Gaming-Setup-Hinweise bleiben vorgemerkt, bis die App-Aktualisierung bestätigt ist.');await pushStatus();
-  }catch(error){if(current())notify(error.message,true);}
+    const manager=registration.pushManager;let sub=await manager.getSubscription();if(!current())return;
+    if(sub){
+      const known=await api('/api/control-mobile/push/check',{method:'POST',body:{endpoint:sub.endpoint}});if(!current())return;
+      if(typeof known.registered!=='boolean')throw Error('Die Geräteanmeldung konnte nicht bestätigt werden. Bitte erneut versuchen.');
+      if(!known.registered){
+        // Only this explicit user action replaces an expired/orphaned browser
+        // subscription. Status checks and page visits never subscribe silently.
+        await sub.unsubscribe();if(!current())return;
+        const remaining=await manager.getSubscription();if(!current())return;
+        if(remaining)throw Error('Die alte Geräteanmeldung konnte nicht entfernt werden. Bitte die App neu öffnen und erneut versuchen.');
+        sub=null;
+      }
+    }
+    if(!sub){sub=await manager.subscribe({userVisibleOnly:true,applicationServerKey:key});if(!current())return;}
+    const capabilities=await activePushCapabilities();if(!current())return;
+    const registered=await api('/api/control-mobile/push',{method:'POST',body:{subscription:sub.toJSON(),...capabilities}});if(!current())return;
+    notify(registered.setupPushVersion===1&&registered.reportPushVersion===1?'Benachrichtigungen eingeschaltet. Über „Testmitteilung senden“ kannst du Ton und Anzeige prüfen.':'Mitteilungen eingeschaltet. Hinweise für noch nicht bestätigte Bereiche bleiben bis zur App-Aktualisierung vorgemerkt.');await pushStatus();
+  }catch(error){if(current()){notify(error.message,true);$('#push-state').textContent=error.message;}}
+  finally{control.disabled=false;}
 });
 $('#test-push').addEventListener('click',async()=>{try{await api('/api/control-mobile/push/test',{method:'POST',body:{confirm:true}});notify('Testmitteilung wird gesendet.');}catch(error){notify(error.message,true);}});
 $('#disable-push').addEventListener('click',async()=>{try{const sub=await registration?.pushManager.getSubscription();if(sub){await api('/api/control-mobile/push',{method:'DELETE',body:{endpoint:sub.endpoint}});await sub.unsubscribe();}await pushStatus();notify('Mitteilungen auf diesem Handy ausgeschaltet.');}catch(error){notify(error.message,true);}});

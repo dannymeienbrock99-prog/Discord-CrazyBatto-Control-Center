@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {withCommunitySqlite} from './helpers/community-fixture-store.mjs';
 import assert from 'node:assert/strict';
 import { AdminCrowns } from '../src/admin-crowns.mjs';
 import { CommunityControl } from '../src/community-control.mjs';
@@ -23,6 +24,7 @@ function setup() {
     if(method==='PATCH'&&route===`/guilds/${GUILD}/members/${USER}`){member.nick=payload.nick;return structuredClone(member);}
     throw Error('Unexpected fixture route');
   }}};
+  withCommunitySqlite(service.accounts.store);
   service.communityControl=new CommunityControl(service);
   return{module:new AdminCrowns(service),service,state,guild,member,owner,writes:()=>state.calls.filter(row=>row.method!=='GET')};
 }

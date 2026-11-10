@@ -63,14 +63,16 @@ function discordError(response, body, mutation) {
 export class DiscordClient {
   constructor(config, { fetchImpl = globalThis.fetch, now = Date.now } = {}) { this.config = config; this.fetch = fetchImpl; this.now = now; this.delays = new Map(); }
 
-  async request(method, path, { token, payload, imageBytes, imageMeta } = {}) {
+  async request(method, path, { token, payload, imageBytes, imageMeta, auditReason } = {}) {
     if (!/^\/[A-Za-z0-9_@/?.=&%-]+$/.test(path) || path.includes('..')) throw new Error('Ungültiger interner Discord-Pfad.');
+    if (auditReason !== undefined && (method === 'GET' || typeof auditReason !== 'string' || !auditReason.isWellFormed() || !auditReason.trim() || auditReason.length > 500 || /[\u0000-\u001f\u007f]/.test(auditReason))) throw new AppError('validation', 'Der Discord-Protokollgrund ist ungültig.');
     const authorizationKey = token ? sha256(token) : 'bot';
     const routeKey = authorizationKey + ':' + method + ':' + path.replace(/\/messages\/\d+/g, '/messages/:id');
     const globalKey = authorizationKey + ':global';
     const until = Math.max(this.delays.get(globalKey) || 0, this.delays.get(routeKey) || 0);
     if (until > this.now()) throw new AppError('rate_limited', 'Discord begrenzt die Anfragen. Bitte nach der angezeigten Wartezeit erneut versuchen.', 429, until - this.now());
     const headers = { Authorization: token ? 'Bearer ' + token : 'Bot ' + this.config.botToken, 'User-Agent': 'Crazy_Batto-Discord-App/2.2.0' };
+    if (auditReason !== undefined) headers['X-Audit-Log-Reason'] = encodeURIComponent(auditReason.trim());
     let body;
     if (imageBytes) {
       body = new FormData();

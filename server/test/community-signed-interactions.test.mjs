@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {withCommunitySqlite} from './helpers/community-fixture-store.mjs';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { Readable } from 'node:stream';
@@ -23,6 +24,7 @@ function fixture() {
     musicBot: { status: () => ({ configured: true }), accept: data => musicCalls.push(data) },
     birthdays: { calendar: () => ({ entries: [{ name: '@everyone **Fixture**', day: 9, month: 11, daysUntil: 0 }] }) }
   };
+  withCommunitySqlite(service.accounts.store);
   const community = service.communityControl = new CommunityControl(service, { now: () => NOW });
   const data = community.data(); data.settings = communityDefaults();
   data.settings.tickets.enabled = true; data.settings.tickets.channelId = CHANNEL; data.settings.tickets.staffRoleIds = [TARGET];

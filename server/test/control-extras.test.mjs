@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {withCommunitySqlite} from './helpers/community-fixture-store.mjs';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { ControlExtras, EXTRA_ACTIONS } from '../src/control-extras.mjs';
@@ -30,6 +31,7 @@ function fixture() {
     if(route===`/channels/${CHANNEL}/messages`&&method==='POST')return{id:MESSAGE,channel_id:CHANNEL,author:{id:BOT,bot:true},flags:1<<13};
     throw Error('Unexpected fixture request: '+method+' '+route);
   }},botGateway:{lastIntents:131,status:()=>({ready:true}),voiceMembers:()=>[{userId:USER,channelId:CHANNEL,name:'Mitglied'}]}};
+  withCommunitySqlite(service.accounts.store);
   service.communityControl=new CommunityControl(service,{now:()=>state.now});
   const options={now:()=>state.now,prepareAudio:async input=>{state.prepared++;await state.prepareHook?.(input);return{bytes:Buffer.from('encoded voice fixture'),mime:'audio/ogg',durationSeconds:2,waveform:'AQID'};}};
   let extras=new ControlExtras(service,options);

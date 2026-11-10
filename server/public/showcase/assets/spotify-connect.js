@@ -36,8 +36,9 @@ async function run(action){
 }
 async function connect(){
   const epoch=generation;if(!await refresh()||epoch!==generation||!connection?.configured||connection.previewOnly)return;
-  if(window.CBConsent?.allowsSpotify()!==true){window.CBConsent?.openSettings();message('Erlaube Spotify in den Cookie-Einstellungen und klicke danach erneut auf „Spotify verbinden“.');return;}
-  const result=await api('/api/spotify/connect',{method:'POST',body:{}});if(epoch!==generation||window.CBConsent?.allowsSpotify()!==true)return;
+  // This explicit click starts account authorization, not an embedded player.
+  // The retired SDK consent flag must not gate the first-party OAuth request.
+  const result=await api('/api/spotify/connect',{method:'POST',body:{}});if(epoch!==generation)return;
   let target;try{target=new URL(result.authorizationUrl);}catch{throw Error('Die Spotify-Anmeldeadresse konnte nicht bestätigt werden.');}
   if(target.protocol!=='https:'||target.hostname!=='accounts.spotify.com'||target.pathname!=='/authorize'||target.username||target.password||target.port||target.hash)throw Error('Die Spotify-Anmeldeadresse konnte nicht bestätigt werden.');
   window.location.assign(target.href);

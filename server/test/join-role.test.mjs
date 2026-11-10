@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {withCommunitySqlite} from './helpers/community-fixture-store.mjs';
 import assert from 'node:assert/strict';
 import { JoinRole, JOIN_ROLE_ACTIONS } from '../src/join-role.mjs';
 import { CommunityControl } from '../src/community-control.mjs';
@@ -34,6 +35,7 @@ function fixture() {
       throw Error('Unexpected fixture request '+method+' '+route);
     }},botGateway:{running:true,lastIntents:131,membersIntentRejected:false,status:()=>({ready:state.ready}),retries:[],retry(delay,options){state.ready=false;this.retries.push({delay,options});}},
   };
+  withCommunitySqlite(service.accounts.store);
   const community=service.communityControl=new CommunityControl(service,{now:()=>clock});community.runtime.membersIntentAllowed=true;
   const make=()=>new JoinRole(service,{now:()=>clock,setTimer(callback){const timer={callback,unref(){}};timers.add(timer);return timer;},clearTimer:timer=>timers.delete(timer)});
   const join=service.autoJoinRole=make();

@@ -4,22 +4,22 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import crypto from 'node:crypto';
 
-function fixture({replyVersion=1,reply=true,registered=true}={}){
+function fixture({replyVersion=1,reportReplyVersion=0,reply=true,registered=true}={}){
   const nodes=new Map(),timers=new Map(),events={},calls=[],messages=[],ports=[];let timerId=0;
   const $=id=>{if(!nodes.has(id))nodes.set(id,{disabled:false,hidden:false,textContent:'',listeners:{},addEventListener(name,fn){this.listeners[name]=fn;},replaceChildren(){}});return nodes.get(id);};
   $('#login-form').elements=[];
   class MessageChannel{
     constructor(){this.port1={onmessage:null,closed:false,close(){this.closed=true;}};this.port2={closed:false,close(){this.closed=true;},postMessage:value=>this.port1.onmessage?.({data:value})};ports.push(this.port1,this.port2);}
   }
-  const active={state:'activated',postMessage(value,transfer){messages.push({value,transfer});if(reply)Promise.resolve().then(()=>transfer[0].postMessage({type:'control-push-capabilities',requestId:value.requestId,setupPushVersion:replyVersion}));}};
+  const active={state:'activated',postMessage(value,transfer){messages.push({value,transfer});if(reply)Promise.resolve().then(()=>transfer[0].postMessage({type:'control-push-capabilities',requestId:value.requestId,setupPushVersion:replyVersion,reportPushVersion:reportReplyVersion}));}};
   const registration={active,update:async()=>{},pushManager:{getSubscription:async()=>({endpoint:'https://fcm.googleapis.com/fcm/send/device'})}};
   const navigator={serviceWorker:{register:async()=>registration,ready:Promise.resolve(registration),addEventListener:(name,fn)=>events[name]=fn}};
   const context={URL,URLSearchParams,crypto,MessageChannel,navigator,window:{PushManager:class{},Notification:{}},Notification:{permission:'granted'},location:{href:'https://example.invalid/control-center/'},document:{hidden:false,querySelectorAll:()=>[],addEventListener:(name,fn)=>events[name]=fn},$,notify(){},currentSession:()=>({user:{id:'owner'}}),loadSession:async()=>({user:{id:'owner'}}),
     setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),
-    api:async(url,options)=>{calls.push({url,options});return url.endsWith('/check')?{registered,setupPushVersion:options.body.setupPushVersion}:{enabled:true,publicKey:'public'};},
+    api:async(url,options)=>{calls.push({url,options});return url.endsWith('/check')?{registered,setupPushVersion:options.body.setupPushVersion,reportPushVersion:options.body.reportPushVersion}:{enabled:true,publicKey:'public'};},
   };
   const source=fs.readFileSync(new URL('../public/showcase/assets/control-mobile.js',import.meta.url),'utf8').replace(/^import[^\n]+\n/,'').replace(/void start\(\);\s*$/,'');
-  vm.runInNewContext(source+'\nglobalThis.handlers={activeSetupPushVersion,pushStatus,setRegistration:value=>registration=value,invalidate:privateReset};',context);
+  vm.runInNewContext(source+'\nglobalThis.handlers={activePushCapabilities,activeSetupPushVersion,pushStatus,setRegistration:value=>registration=value,invalidate:privateReset};',context);
   context.handlers.setRegistration(registration);
   return {...context.handlers,$,timers,events,calls,messages,ports,registration,context};
 }
@@ -73,4 +73,11 @@ test('service worker answers capability requests only through their supplied rep
   const requestId=crypto.randomUUID();events.message({data:{type:'control-push-capabilities',requestId},ports:[{postMessage:value=>responses.push(value)}]});
   assert.equal(responses.length,1);assert.equal(responses[0].requestId,requestId);assert.equal(responses[0].setupPushVersion,1);
   events.message({data:{type:'control-push-capabilities',requestId:'wrong'},ports:[{postMessage:value=>responses.push(value)}]});assert.equal(responses.length,1);
+});
+
+test('report capability is checked independently from setup support through one handshake',async()=>{
+  const modern=fixture({reportReplyVersion:1});await modern.pushStatus();const check=modern.calls.find(call=>call.url.endsWith('/check'));
+  assert.equal(modern.messages.length,1);assert.equal(check.options.body.setupPushVersion,1);assert.equal(check.options.body.reportPushVersion,1);assert.match(modern.$('#push-state').textContent,/Gaming-Setups und Meldungen/);
+  const previous=fixture();await previous.pushStatus();assert.equal(previous.calls.find(call=>call.url.endsWith('/check')).options.body.reportPushVersion,0);assert.match(previous.$('#push-state').textContent,/Meldungen warten/);
+  const unknown=fixture({reportReplyVersion:2});assert.equal((await unknown.activePushCapabilities()).reportPushVersion,0);
 });

@@ -40,14 +40,16 @@ test('existing connections missing controller permission show a working reconnec
   const f=fixture({status:{configured:true,connected:true,controllerReady:false}});await f.run(f.start);assert.equal(f.get('spotifyConnectButton').hidden,false);assert.equal(f.get('spotifyConnectButton').disabled,false);assert.equal(f.get('spotifyConnectButton').textContent,'Spotify erneut freigeben');
 });
 
-test('explicit consent and click start only the existing CSRF-protected connect action',async()=>{
+test('only an explicit connect click starts the existing CSRF-protected Spotify authorization action',async()=>{
   const f=fixture();await f.run(f.start);assert.equal(f.requests.some(r=>r.path.endsWith('/connect')),false);await f.run(f.connect);
   const call=f.requests.find(r=>r.path.endsWith('/connect'));assert.equal(call.method,'POST');assert.deepEqual(JSON.parse(JSON.stringify(call.body)),{});assert.equal(call.csrf,undefined);assert.equal(f.redirects.length,1);assert.match(f.redirects[0],/^https:\/\/accounts.spotify.com\/authorize\?/);
   assert.ok(f.requests.every(r=>['/api/spotify/status','/api/spotify/connect'].includes(r.path)));
 });
 
-test('missing consent opens settings without starting OAuth and never auto-connects on consent',async()=>{
-  const f=fixture({consent:false});await f.run(f.connect);assert.equal(f.settings.length,1);assert.equal(f.requests.some(r=>r.path.endsWith('/connect')),false);f.setConsent(true);assert.equal(f.redirects.length,0);
+test('the retired embed consent flag cannot block explicit OAuth and never starts an automatic connection',async()=>{
+  const f=fixture({consent:false});await f.run(f.start);assert.equal(f.requests.some(r=>r.path.endsWith('/connect')),false);assert.equal(f.redirects.length,0);
+  await f.run(f.connect);assert.equal(f.settings.length,0);assert.equal(f.requests.filter(r=>r.path.endsWith('/connect')).length,1);assert.equal(f.redirects.length,1);
+  assert.ok(f.requests.every(r=>['/api/spotify/status','/api/spotify/connect'].includes(r.path)));
 });
 
 test('unexpected OAuth hosts, protocols, credentials, paths, ports and fragments are rejected',async()=>{
@@ -65,10 +67,10 @@ test('verified controller-ready return points back to the Control Center without
   const f=fixture({callback:'?spotify=connected',status:{configured:true,connected:true,controllerReady:true,spotifyUser:{displayName:'Mein Spotify'}}});await f.run(f.start);assert.equal(f.get('spotifyConnectButton').hidden,true);assert.match(f.get('spotifyConnectIdentity').textContent,/Mein Spotify/);assert.match(f.get('spotifyConnectStatus').textContent,/zurück zum Crazy_Batto Control Center/);assert.equal(f.requests.length,1);assert.equal(f.requests[0].path,'/api/spotify/status');
 });
 
-test('account change and revoked consent cancel a pending OAuth redirect',async()=>{
-  for(const action of ['account','consent']){
+test('account changes and leaving the page cancel a pending OAuth redirect',async()=>{
+  for(const action of ['account','pagehide']){
     const pending=defer(),f=fixture({apiOverride:async path=>path.endsWith('/status')?{configured:true,connected:false}:pending.promise});const running=f.run(f.connect);
-    while(!f.requests.some(r=>r.path.endsWith('/connect')))await Promise.resolve();if(action==='account')f.events['cb-account-changed']();else f.setConsent(false);
+    while(!f.requests.some(r=>r.path.endsWith('/connect')))await Promise.resolve();if(action==='account')f.events['cb-account-changed']();else f.events.pagehide();
     pending.resolve({authorizationUrl:'https://accounts.spotify.com/authorize?state=opaque'});await running;assert.equal(f.redirects.length,0);
   }
 });
@@ -81,4 +83,10 @@ test('late status cannot restore a different account or display callback success
 test('duplicate clicks and failed status never start duplicate or stale OAuth actions',async()=>{
   const pending=defer(),f=fixture({apiOverride:async path=>path.endsWith('/status')?{configured:true,connected:false}:pending.promise});const first=f.run(f.connect);while(!f.requests.some(r=>r.path.endsWith('/connect')))await Promise.resolve();await f.run(f.connect);assert.equal(f.requests.filter(r=>r.path.endsWith('/connect')).length,1);pending.resolve({authorizationUrl:'https://accounts.spotify.com/authorize'});await first;
   const g=fixture({apiOverride:()=>{throw Error('Offline');}});await g.run(g.connect);assert.equal(g.redirects.length,0);assert.equal(g.get('spotifyConnectButton').disabled,true);assert.match(g.get('spotifyConnectStatus').textContent,/Offline/);
+});
+
+test('OAuth-only entry states the external authorization step and has no SDK, token or embed integration',()=>{
+  const html=fs.readFileSync(new URL('../public/showcase/media-player.html',import.meta.url),'utf8'),source=fs.readFileSync(new URL('../public/showcase/assets/spotify-connect.js',import.meta.url),'utf8');
+  assert.match(html,/Dort entscheidest du über den Zugriff/);assert.match(html,/kein externer Player geladen oder automatisch gestartet/);
+  assert.doesNotMatch(source,/CBConsent|sdk\.scdn\.co|Spotify\.Player|\/api\/spotify\/(?:token|play|control)|createElement\(['"](?:script|iframe)/);
 });

@@ -44,6 +44,7 @@ attachEmailAccess(service);
 service.birthdays = new BirthdayService(service);
 service.accounts.birthdays = service.birthdays;
 service.communityControl = new CommunityControl(service);
+service.accounts.communityControl = service.communityControl;
 service.tiktokLive = new TikTokLive(service);
 service.adminCrowns = new AdminCrowns(service);
 service.joinRequests = new JoinRequests(service);

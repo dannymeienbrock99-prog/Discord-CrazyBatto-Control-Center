@@ -4,7 +4,7 @@ Ein gemeinsames Verwaltungsprojekt für die CRAZY_BATTO-Website, den Discord-Bot
 
 Dieses Repository enthält den bereinigten Quellcode. Zugangsdaten, Betreiber- und Serverkennungen, Datenbanken, Mitgliederinhalte, gespeicherte Verbindungen, private Signierschlüssel und fertige Installer/APKs gehören nicht zum Repository. Die eigenen Windows- und Android-Builds werden privat verteilt; der öffentliche Quellcode ermöglicht ausdrücklich keinen Zugang zur bestehenden Verwaltung.
 
-Stand **Control Center 3.6.0** mit eigenem **Stream-Deck-Plugin 1.0.0**: Spotify und Bot-Musik per Taste steuern, Verwaltungsbereiche öffnen und bei neuen Gaming-Setup-Einreichungen einen Hinweis zur Freigabe erhalten. Die Musik-Sitzung endet, sobald ihr Initiator den Sprachkanal verlässt oder wechselt. Spotify-Verknüpfung und Freigaben bleiben an das angemeldete Konto gebunden.
+Stand **Control Center 3.6.1** mit eigenem **Stream-Deck-Plugin 1.0.0**: Mitgliedermeldungen am PC und Handy prüfen, begründete Maßnahmen bestätigen und neue Meldungen sowie Gaming-Setup-Einreichungen per Push erhalten. Spotify und Bot-Musik lassen sich auch per Stream-Deck-Taste steuern. Die Musik-Sitzung endet, sobald ihr Initiator den Sprachkanal verlässt oder wechselt. Spotify-Verknüpfung und Freigaben bleiben an das angemeldete Konto gebunden.
 
 ![PC-Hilfe](server/public/showcase/assets/control/dragon-gold-pc-help.png)
 
@@ -17,7 +17,7 @@ Stand **Control Center 3.6.0** mit eigenem **Stream-Deck-Plugin 1.0.0**: Spotify
 | Beitrittsanfragen | Native Discord-Bewerbungen auflisten, prüfen und annehmen/ablehnen, wenn „Apply to Join“, passende Bot-Rechte und die Discord-API-Vorschau für den Server verfügbar sind. |
 | Regeln & Zustimmung | Regel-Einbettung mit Ja-/Nein-Aktion; zustimmungsabhängige Rolle entsprechend der Serverkonfiguration. Goldene Regel- und Ankündigungsbanner liegen bei. |
 | TikTok Live | 20 konfigurierbare Creator-Plätze, Zielkanäle und Rollen, Live-Erkennung, Vorschauinformationen/-bilder bei verfügbarer Quelle, Beginn und verstrichene Live-Zeit. |
-| Meldungen | Mitglied und Vorfallsart auswählen, Pflichtgrund eingeben, geschützte Fallübersicht; Teamentscheidung und berechtigungsgeprüfte Moderationsaktionen. |
+| Meldungen | Mitglied und Vorfallsart auswählen, Pflichtgrund eingeben, geschützte Fallübersicht am PC und Handy. Einzelne Maßnahmen mit Begründung und Bestätigung: private Abmahnung, Sprachkanal-Stummschaltung aufheben/setzen, Discord-Timeout aufheben/setzen, Kick, Bann und Fallabschluss. Versionsprüfung, Rollenrechte und Maßnahmenverlauf verhindern unbemerkte Doppelentscheidungen; unklare Ergebnisse werden nicht automatisch wiederholt. |
 | Sprachkanäle | Aktuelle Teilnehmer anzeigen, serverseitig stumm-/entstummen und die Verbindung trennen, sofern Bot- und Rollenrechte dies erlauben. |
 | Tickets | Allgemeine Supporttickets mit Schließfunktion sowie separater PC-Hilfe-Ablauf. |
 | PC-Hilfe & Aufträge | Hardware/Software auswählen; Symptome, CPU, GPU, Mainboard, RAM, Betriebssystem, Netzteil und Treiberstand erfassen; geschützte Bildanhänge. Auftragsanfrage mit E-Mail oder Telefon und Preisvorschlag ab 10 €. Annahme/Ablehnung und Preisabstimmung durch den Betreiber. |
@@ -30,7 +30,7 @@ Stand **Control Center 3.6.0** mit eigenem **Stream-Deck-Plugin 1.0.0**: Spotify
 | Erweiterte Moderation | Unterstützte Discord-AutoMod-Regeln prüfen und konfigurieren; freigegebene Audiodateien über die vorgesehenen Bot-Aktionen versenden. |
 | Verbindungsverwaltung | SFTP-Dateimanager mit lokalen/entfernten Verzeichnissen, Upload/Download und gespeicherten Profilen. Zugangsdaten werden lokal geschützt; der SSH-Hostschlüssel wird geprüft. WinSCP-Import übernimmt freigegebene Verbindungsmetadaten. |
 | Lokales Discord | Eigene BetterDiscord-Brücke für kompatible, bereits lokal installierte Erweiterungen und Themen; deren Status und Einstellungen lassen sich im Center verwalten. Fremde Plugins sind nicht mitgeliefert. |
-| Android-Control | Persönliche Verwaltungsoberfläche für Mitgliederfreigaben, Gaming-Setup-Prüfung und Support-/Auftragsansichten. Hinweise auf neue Setup-Einreichungen mit dauerhafter Versionszuordnung; zurückgezogene oder bereits entschiedene Einreichungen werden nicht nachgemeldet. Push-Anmeldung und Testbenachrichtigung; Android-Benachrichtigungskanal mit Ton. |
+| Android-Control | Persönliche Verwaltungsoberfläche für Mitgliederfreigaben, Meldungen mit Moderation, Gaming-Setup-Prüfung und Support-/Auftragsansichten. Neue Meldungen und Setup-Einreichungen erhalten dauerhafte Benachrichtigungsbelege. Die App bestätigt zunächst, welche Hinweisarten ihr aktiver Hintergrunddienst versteht; bis dahin bleiben neue Hinweise vorgemerkt. Versand- und Entfernungsbelege bleiben auch nach Geräteabmeldung nachvollziehbar. Push-Anmeldung, ausdrückliche Erneuerung veralteter Geräteabos und Testbenachrichtigung; Android-Kanal mit Ton. |
 | Robot-SchichtLog | Android-Projekt mit Schicht-/Auftragsaufzeichnungen und Bildern. Optionale Verbindung zum Center zum Prüfen, Nacharbeiten und Löschen synchronisierter Aufträge, einschließlich Konflikt- und Wiederholungsbehandlung. Lokale Daten werden erst nach aktivierter Verbindung synchronisiert. |
 
 ## Was von der Einrichtung abhängt
@@ -41,6 +41,7 @@ Stand **Control Center 3.6.0** mit eigenem **Stream-Deck-Plugin 1.0.0**: Spotify
 - Die native Bewerbungsverwaltung verwendet eine Discord-API-Vorschau und setzt „Apply to Join“ voraus. Fehlende Verfügbarkeit wird angezeigt; das Center schaltet diesen Servermodus nicht selbst ein.
 - TikTok kann die externe Erkennung oder Vorschau einschränken. Die Integration zeigt verfügbare Daten und kennt Fehler-/Offlinezustände; ein universeller eingebetteter Live-Videoplayer ist nicht zugesichert.
 - Ton und Pop-up auf Android hängen von erlaubten Benachrichtigungen, Browser/TWA-Verknüpfung, Benachrichtigungskanal und den Geräteeinstellungen ab. Den Test auf dem eigenen Handy ausführen; ein automatisierter Test ersetzt ihn nicht.
+- Nach einem Update die Handyseite neu laden. Eine Geräteanmeldung ist erst aktiv, wenn Browser und Server sie bestätigen. Bei abgelaufenen Browserabos erneuert der ausdrückliche Aktivieren-Klick die Anmeldung; ein bloßer Seitenbesuch meldet kein Gerät automatisch an.
 - Externe Konten und Dienste, insbesondere Discord, E-Mail-Anmeldung, Medienablage und optionale Spotify-Anbindung, müssen privat eingerichtet werden. Es sind keine produktiven Konten vorkonfiguriert.
 - PC-Aufträge enthalten einen Preisvorschlag und eine Freigabe; dieses Projekt enthält keinen automatischen Zahlungsabzug oder Zahlungsdienst.
 
