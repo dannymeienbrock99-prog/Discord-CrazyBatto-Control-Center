@@ -108,3 +108,12 @@ test('generic notification opens only the fixed same-origin Control Center',asyn
   const f=worker(async()=>({ok:false,status:503}));await f.push();await f.click(f.shown[0].data.url);assert.equal(f.opened[0],'https://crazybatto.de/control-center/');
   await f.click('https://outside.invalid/');await f.click('//outside.invalid/');assert.equal(f.opened.length,1);
 });
+
+test('a verified setup approval notice opens the fixed setups tab; unknown destinations remain rejected',async()=>{
+  const f=worker(async()=>({ok:true,status:200,json:async()=>({user:{id:OWNER}})}));
+  await f.push({...payload(),tag:'cb-control-gaming_setup-'+EVENT,url:'/control-center/?view=setups',body:'Ein Gaming-Setup wartet auf deine Freigabe.'});
+  assert.equal(f.shown.length,1);assert.equal(f.shown[0].silent,false);
+  await f.click(f.shown[0].data.url);assert.equal(f.opened[0],'https://crazybatto.de/control-center/?view=setups');
+  await f.push({...payload(),url:'/control-center/?view=unknown'});await f.click('/control-center/?view=setups&redirect=https://outside.invalid/');
+  assert.equal(f.shown.length,1);assert.equal(f.opened.length,1);
+});

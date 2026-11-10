@@ -424,3 +424,11 @@ test('Spotify controller stays on fixed authenticated routes and only exposes a 
   for(const [operation,body] of [['spotify.token',{}],['spotify.control',{action:'play',deviceId:'pc-one',url:'https://evil.test'}],['spotify.control',{action:'volume',deviceId:'pc-one',volume:101}],['spotify.admin.save',{clientId:'a'.repeat(32),expectedRevision:-1}]])await assert.rejects(f.service.run('website.request',{operation,body}));
   assert.equal(f.calls.length,before);
 });
+
+test('Spotify shuffle repeat and seeking are typed and restricted to the authenticated control endpoint',async()=>{
+  const f=fixture(url=>url.endsWith('/api/account/login')?reply(loginReply()):reply({ok:true}));await f.login();
+  for(const body of [{action:'shuffle',deviceId:'pc-one',state:true},{action:'repeat',deviceId:'pc-one',state:'context'},{action:'seek',deviceId:'pc-one',positionMs:12000}]){
+    await f.service.run('website.request',{operation:'spotify.control',body});const call=f.calls.at(-1);assert.equal(call.url,'https://crazybatto.de/api/spotify/control');assert.deepEqual(JSON.parse(call.options.body),body);
+  }
+  const before=f.calls.length;for(const body of [{action:'shuffle',deviceId:'pc-one',state:'yes'},{action:'repeat',deviceId:'pc-one',state:'all'},{action:'seek',deviceId:'pc-one',positionMs:-1},{action:'seek',deviceId:'pc-one',positionMs:1.5},{action:'seek',deviceId:'pc-one',positionMs:10,token:'no'}])await assert.rejects(f.service.run('website.request',{operation:'spotify.control',body}));assert.equal(f.calls.length,before);
+});

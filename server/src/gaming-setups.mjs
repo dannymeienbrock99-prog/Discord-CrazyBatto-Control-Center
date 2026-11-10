@@ -3,6 +3,7 @@ import { AppError, assert, errorBody, safeMessage } from './errors.mjs';
 import { inspectImageBytes } from './payloads.mjs';
 import { readBody, parseJson } from './multipart.mjs';
 import { P, has, channelPermissions } from './permissions.mjs';
+import { controlNotice, ensureControlNotices } from './control-members.mjs';
 
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const ID = /^\d{17,20}$/;
@@ -49,13 +50,35 @@ export class GamingSetups {
       CREATE TABLE IF NOT EXISTS gaming_setup_outbox (
         id TEXT PRIMARY KEY,setup_id TEXT NOT NULL REFERENCES gaming_setups(id),revision INTEGER NOT NULL,operation TEXT NOT NULL,
         state TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,last_error TEXT NOT NULL DEFAULT '',updated_at INTEGER NOT NULL,
-        UNIQUE(setup_id,revision,operation));`);
+        UNIQUE(setup_id,revision,operation));
+      CREATE TABLE IF NOT EXISTS gaming_setup_notice_receipts (
+        setup_id TEXT NOT NULL REFERENCES gaming_setups(id) ON DELETE CASCADE,revision INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,PRIMARY KEY(setup_id,revision));`);
+    if(!this.store.all('PRAGMA table_info(gaming_setups)').some(column=>column.name==='moderation_reason'))this.store.db.exec("ALTER TABLE gaming_setups ADD COLUMN moderation_reason TEXT NOT NULL DEFAULT ''");
+    ensureControlNotices(this.store);
     this.store.run("UPDATE gaming_setup_outbox SET state='uncertain',last_error=? WHERE state='sending'",'Der Versand wurde unterbrochen. Bitte im Control Center prüfen.');
   }
   row(id) { assert(UUID.test(id||''),'Dieses Setup ist nicht vorhanden.','not_found',404);const row=this.store.get('SELECT * FROM gaming_setups WHERE id=?',id);assert(row,'Dieses Setup ist nicht vorhanden.','not_found',404);return row; }
   own(userId) { return this.store.get('SELECT * FROM gaming_setups WHERE user_id=?',userId); }
   account(userId) { return this.store.get('SELECT id,name,confirmed,suspended FROM accounts WHERE id=?',userId); }
   active(row) { const account=this.account(row.user_id);return !!account?.confirmed&&!account.suspended; }
+  reviewNoticeState(event) {
+    const row=this.store.get('SELECT * FROM gaming_setups WHERE id=?',event.target_id);
+    if(!row||row.status!=='pending'||row.blocked||!row.published_json||!row.consent_at||row.published_revision!==event.revision)return 'obsolete';
+    return this.active(row)&&this.settings().settings.enabled?'ready':'paused';
+  }
+  queueReviewNotice(row) {
+    if(this.reviewNoticeState({target_id:row.id,revision:row.published_revision})!=='ready')return;
+    // Called inside the submission/backfill transaction. This receipt survives
+    // event expiry, so restarting or saving a later draft cannot repeat a notice.
+    const receipt=this.store.run('INSERT OR IGNORE INTO gaming_setup_notice_receipts(setup_id,revision,created_at) VALUES (?,?,?)',row.id,row.published_revision,this.now());
+    if(receipt.changes)controlNotice(this.store,'gaming_setup',row.id,row.published_revision,row.consent_at);
+  }
+  backfillReviewNotices() {
+    this.store.transaction(()=>{
+      for(const row of this.store.all("SELECT s.* FROM gaming_setups s LEFT JOIN gaming_setup_notice_receipts r ON r.setup_id=s.id AND r.revision=s.published_revision WHERE s.status='pending' AND r.setup_id IS NULL"))this.queueReviewNotice(row);
+    });
+  }
   current(context,admin=false) { return this.accounts.assertCurrent(context,{admin}); }
   hasImage(id) { return !!this.store.get('SELECT 1 FROM gaming_setup_images WHERE id=? LIMIT 1',id); }
   image(userId,id) { assert(IMAGE.test(id||''),'Der Bildverweis ist ungültig.');const row=this.store.get('SELECT * FROM gaming_setup_images WHERE user_id=? AND id=?',userId,id);assert(row,'Dieses Bild gehört nicht zu deinem Setup.','forbidden',403);return row; }
@@ -102,7 +125,7 @@ export class GamingSetups {
       this.store.transaction(()=>{
         this.store.run(`INSERT INTO gaming_setups(id,user_id,revision,draft_json,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?)
           ON CONFLICT(user_id) DO UPDATE SET revision=excluded.revision,draft_json=excluded.draft_json,status=excluded.status,updated_at=excluded.updated_at`,id,user.id,revision,JSON.stringify(draft),status,this.now(),this.now());
-        if(body.publish){this.store.run('UPDATE gaming_setups SET published_json=?,published_revision=?,consent_at=? WHERE id=?',JSON.stringify(draft),revision,this.now(),id);if(status==='published')this.reserve(this.row(id),'publish');else this.reserve(this.row(id),'redact');}
+        if(body.publish){this.store.run("UPDATE gaming_setups SET published_json=?,published_revision=?,consent_at=?,moderation_reason='' WHERE id=?",JSON.stringify(draft),revision,this.now(),id);if(status==='published')this.reserve(this.row(id),'publish');else {this.reserve(this.row(id),'redact');this.queueReviewNotice(this.row(id));}}
         this.store.audit(user.id,body.publish?'gaming-setup.submitted':'gaming-setup.draft',id,{revision,status},this.now());
       });
       return this.view(context);
@@ -141,7 +164,7 @@ export class GamingSetups {
       this.store.transaction(()=>{this.store.run("UPDATE gaming_setups SET revision=revision+1,status='withdrawn',published_json=NULL,published_revision=NULL,consent_at=NULL,updated_at=? WHERE id=?",this.now(),row.id);this.reserve(this.row(row.id),'redact');this.store.audit(user.id,'gaming-setup.withdrawn',row.id,{},this.now());});return this.view(context);
     });
   }
-  adminView(context) { this.current(context,true);return {...this.settings(),entries:this.store.all('SELECT * FROM gaming_setups ORDER BY updated_at DESC LIMIT 200').map(row=>({...this.entry(row.published_json?{...row,draft_json:row.published_json}:row,{privateView:true}),contentKind:row.published_json?'submitted':'draft',hasNewerDraft:!!row.published_json&&row.draft_json!==row.published_json})),limits:GAMING_SETUP_LIMITS}; }
+  adminView(context) { this.current(context,true);return {...this.settings(),entries:this.store.all('SELECT * FROM gaming_setups ORDER BY updated_at DESC LIMIT 200').map(row=>({...this.entry(row.published_json?{...row,draft_json:row.published_json}:row,{privateView:true}),contentKind:row.published_json?'submitted':'draft',hasNewerDraft:!!row.published_json&&row.draft_json!==row.published_json,moderationReason:row.moderation_reason})),limits:GAMING_SETUP_LIMITS}; }
   async forumContext(forumId) {
     assert(this.config.clientId===BOT_ID&&!!this.config.botToken&&ID.test(this.config.discordGuildId||''),'Der vorhandene Crazy_Batto-Bot ist nicht eingerichtet.','unconfigured',503);
     const guildId=this.config.discordGuildId,bot=await this.discord.request('GET','/users/@me');assert(bot?.id===BOT_ID&&bot.bot===true,'Es wurde ein anderer Discord-Bot geliefert.','unconfigured',503);
@@ -173,8 +196,9 @@ export class GamingSetups {
     assert(Number.isSafeInteger(payload.expectedRevision)&&payload.expectedRevision===row.revision,'Das Setup wurde inzwischen geändert. Bitte vor der Entscheidung neu laden.','conflict',409);
     if(action==='setup.moderate')return this.exclusive(row.user_id,()=>{
       this.current(context,true);const latest=this.row(row.id);assert(payload.expectedRevision===latest.revision,'Das Setup wurde inzwischen geändert. Bitte vor der Entscheidung neu laden.','conflict',409);assert(['approve','hide'].includes(payload.operation),'Unbekannte Setup-Entscheidung.');
+      const reason=text(payload.reason??'',1000);
       if(payload.operation==='approve')assert(['pending','hidden'].includes(latest.status)&&latest.published_json&&latest.consent_at&&this.active(latest)&&this.settings().settings.enabled,'Das Mitglied muss sein aktuelles Setup erst zur Veröffentlichung einreichen.','conflict',409);
-      this.store.transaction(()=>{this.store.run('UPDATE gaming_setups SET revision=revision+1,status=?,blocked=?,updated_at=? WHERE id=?',payload.operation==='approve'?'published':'hidden',payload.operation==='hide'?1:0,this.now(),row.id);const next=this.row(row.id);if(payload.operation==='approve')this.store.run('UPDATE gaming_setups SET published_revision=? WHERE id=?',next.revision,next.id);this.reserve(this.row(row.id),payload.operation==='approve'?'publish':'redact');this.store.audit(context.user.id,'gaming-setup.'+payload.operation,row.id,{},this.now());});return this.adminView(context);
+      this.store.transaction(()=>{this.store.run('UPDATE gaming_setups SET revision=revision+1,status=?,blocked=?,updated_at=?,moderation_reason=? WHERE id=?',payload.operation==='approve'?'published':'hidden',payload.operation==='hide'?1:0,this.now(),reason,row.id);const next=this.row(row.id);if(payload.operation==='approve')this.store.run('UPDATE gaming_setups SET published_revision=? WHERE id=?',next.revision,next.id);this.reserve(this.row(row.id),payload.operation==='approve'?'publish':'redact');this.store.audit(context.user.id,'gaming-setup.'+payload.operation,row.id,{reason},this.now());});return this.adminView(context);
     });
     const latest=this.outbox(row);assert(latest&&['failed','uncertain'].includes(latest.state),'Dieser Versand ist nicht zur Wiederholung offen.','conflict',409);
     if(latest.state==='uncertain'&&!row.thread_id)await this.reconcile(row);
@@ -245,6 +269,7 @@ export class GamingSetups {
   tick() {
     if(this.running)return this.running;if(this.stopping)return Promise.resolve();
     this.running=(async()=>{
+      this.backfillReviewNotices();
       // Suspension hides public output immediately and schedules redaction of
       // already-published bot content; drafts never create an automatic post.
       for(const row of this.store.all("SELECT s.* FROM gaming_setups s JOIN accounts a ON a.id=s.user_id WHERE (a.suspended=1 OR a.confirmed=0) AND s.status='published'"))this.store.transaction(()=>{this.store.run("UPDATE gaming_setups SET revision=revision+1,status='hidden',blocked=1,updated_at=? WHERE id=?",this.now(),row.id);this.reserve(this.row(row.id),'redact');});

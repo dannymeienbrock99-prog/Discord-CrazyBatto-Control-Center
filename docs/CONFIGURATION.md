@@ -25,6 +25,8 @@ Die öffentliche Version enthält keine Zuordnung zum bestehenden Discord-Server
 
 Die serverseitigen Identitätskonstanten haben synthetische Fallbacks ausschließlich für die lokalen Testfixtures. Eine echte Installation benötigt korrekte private Umgebungsvariablen; die Tests gewähren keinen Produktivzugriff. Neue Rollen-/Kanal-Zuordnungen werden später im Center gespeichert, nicht in Quellcode-Dateien.
 
+Spotify-App-Zugang und Weiterleitungsadresse werden über die geschützte Spotify-Verwaltung eingerichtet; anschließend verbindet jedes berechtigte Konto sein eigenes Spotify-Konto. Der Stream-Deck-Schlüssel wird erst lokal im Center erzeugt. Beide Verbindungen sind weder im Quellcode noch im Pluginpaket vorkonfiguriert. Der Port `17654` ist ein fester lokaler App-Standard und keine Adresse eines privaten Servers.
+
 Die optionalen älteren App-Release-Routen prüfen Metadaten, Pakete, Hashes und Zertifikate. Für eigene Versionen müssen diese veröffentlichten Paketmetadaten bewusst zusammenpassen; vorhandene fremde APKs dürfen nicht einfach unter den erwarteten Namen gelegt werden.
 
 Der Export ersetzt die feste Produktionsidentität in `community-schema`, `discord-control`, `gaming-setups`, `join-requests`, `discord-directory` und der Desktop-Website-Brücke durch Konfiguration. Tests wurden konsistent mit erfundenen IDs neu aufgebaut. Private Zuordnungstabellen werden nicht veröffentlicht.

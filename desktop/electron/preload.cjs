@@ -2,6 +2,7 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 const allowed = new Set([
+  'streamdeck.state','streamdeck.configure','streamdeck.copy','streamdeck.rotate',
   'extras.state','extras.automod.list','extras.automod.save','extras.audio.send',
   'localdiscord.state','localdiscord.install','localdiscord.toggle','localdiscord.settings','localdiscord.save','localdiscord.spectators','localdiscord.history','localdiscord.roles.save','audio.pick','audio.recordPermission','audio.recordEnd',
   'ownerprofile.copy','ownerprofile.open',
@@ -19,6 +20,12 @@ const allowed = new Set([
   'website.state','website.login','website.reconnect','website.disconnect','website.load','website.request'
 ]);
 contextBridge.exposeInMainWorld('discordAdmin', Object.freeze({
+  onNavigate: callback => {
+    if(typeof callback!=='function')return ()=>{};
+    const listener=(_event,page)=>{if(typeof page==='string'&&/^[a-z]{1,24}$/.test(page))callback(page);};
+    ipcRenderer.on('control-center:navigate',listener);
+    return ()=>ipcRenderer.removeListener('control-center:navigate',listener);
+  },
   invoke: (action,payload = {}) => allowed.has(action)
     ? ipcRenderer.invoke('discord-admin:invoke',action,payload)
     : Promise.resolve({ok:false,error:'Diese Aktion ist nicht freigegeben.'})

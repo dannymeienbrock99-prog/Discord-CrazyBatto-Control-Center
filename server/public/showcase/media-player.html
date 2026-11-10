@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="assets/player.css">
   <link rel="stylesheet" href="assets/player-effects.css">
   <link rel="stylesheet" href="assets/account.css">
+  <link rel="stylesheet" href="assets/spotify-connect.css">
+  <script type="module" src="assets/spotify-connect.js"></script>
   <link rel="stylesheet" href="assets/extensions.css">
   <link rel="preload" href="assets/fonts/oxanium-latin.woff2" as="font" type="font/woff2" crossorigin>
   <script src="assets/site.js" defer></script>
@@ -23,6 +25,12 @@
 <div id="cb-website" class="cb-site" data-preview="false" data-start-page="player">
   <div class="cb-shell">
     <main>
+      <section class="cb-spotify-connect" id="spotifyConnect" aria-labelledby="spotifyConnectIdentity">
+        <div id="spotify-connect"><p class="cb-eyebrow">SPOTIFY · CONTROL CENTER &amp; STREAM DECK</p><h2 id="spotifyConnectIdentity">Dein Spotify-Konto verbinden</h2><p id="spotifyConnectStatus" role="status" aria-live="polite">Deine Website-Anmeldung und Spotify-Verbindung werden geprüft …</p><small>Die Musik spielt auf deinem Spotify-Gerät. Für die Fernsteuerung wird Spotify Premium benötigt.</small></div>
+        <div class="cb-spotify-connect-actions"><button class="cb-account-button" id="spotifyConnectButton" type="button" disabled>Spotify verbinden</button><button class="cb-account-button secondary" id="spotifyConnectRefresh" type="button">Status aktualisieren</button><a class="cb-account-button secondary" id="spotifyConnectLogin" href="registrierung.html" target="_blank" rel="noopener">Website-Anmeldung öffnen ↗</a></div>
+        <noscript><p>Aktiviere JavaScript, um dein Spotify-Konto sicher mit dem Control Center zu verbinden.</p></noscript>
+      </section>
+
       <section class="cb-playlist-manager" aria-labelledby="playlistManagerTitle">
         <div class="cb-playlist-manager-heading"><div><h2 id="playlistManagerTitle">Deine Playlists</h2><p>Musik auswählen, zusammenstellen und gemeinsam hören.</p></div><button id="createPlaylist" class="cb-playlist-primary" type="button" disabled><span aria-hidden="true">＋</span> Neue Playlist</button></div>
         <div class="cb-playlist-toolbar"><label for="playlistSelect">Playlist auswählen</label><select id="playlistSelect"><option value="all">Alle Titel</option></select><button id="editPlaylist" type="button" disabled>Playlist bearbeiten</button></div>

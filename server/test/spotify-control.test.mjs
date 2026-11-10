@@ -5,6 +5,7 @@ function fixture(handler){
   const calls=[];let current=true,ready=true,generation=3;
   const guard=()=>{if(!current)throw Error('revoked');return{id:'owner'};};
   const owner={accounts:{assertCurrent:guard,limit(){}},requireLive(){},configured:()=>({revision:2}),generation:()=>generation,status:()=>({controllerReady:ready}),access:async()=>({accessToken:'private-test-token',configRevision:2,generation}),assertBinding:(_context,revision,expectedGeneration)=>{guard();if(revision!==2||expectedGeneration!==generation)throw Error('revoked grant');},
+    async authorizedRequest(context,url,options={},binding){this.assertBinding(context,binding.configRevision,binding.generation);const result=await this.request(url,{...options,headers:{...options.headers,Authorization:'Bearer private-test-token'}});this.assertBinding(context,binding.configRevision,binding.generation);return result;},
     async request(url,options){calls.push({url,options});if(handler)return handler(url,options,calls.length);return url.endsWith('/devices')?{status:200,data:{devices:[{id:'device-one',name:'PC',is_active:true,is_restricted:false,supports_volume:true,volume_percent:50}]}}:{status:204,data:null};}};
   return {owner,calls,revoke:()=>current=false,reconnect:()=>ready=false,renew:()=>generation++};
 }
@@ -49,4 +50,38 @@ test('reconnecting the same account does not revive commands already waiting in 
   const waiting=spotifyControl(f.owner,{}, {action:'next',deviceId:'device-one'});
   await new Promise(resolve=>setImmediate(resolve));f.renew();release();
   const results=await Promise.allSettled([first,waiting]);assert.ok(results.every(result=>result.status==='rejected'));assert.equal(f.calls.length,2);
+});
+test('shuffle, repeat and seek use validated Spotify query contracts without sending extra payloads',async()=>{
+  for(const [body,expected] of [
+    [{action:'shuffle',state:true},'shuffle?device_id=device-one&state=true'],
+    [{action:'shuffle',state:false},'shuffle?device_id=device-one&state=false'],
+    ...['off','context','track'].map(state=>[{action:'repeat',state},'repeat?device_id=device-one&state='+state]),
+    [{action:'seek',positionMs:0},'seek?device_id=device-one&position_ms=0'],
+    [{action:'seek',positionMs:123456},'seek?device_id=device-one&position_ms=123456']
+  ]){
+    const f=fixture();await spotifyControl(f.owner,{}, {...body,deviceId:'device-one'});
+    assert.equal(f.calls.length,2);assert.equal(f.calls[1].url,'https://api.spotify.com/v1/me/player/'+expected);
+    assert.equal(f.calls[1].options.method,'PUT');assert.equal(f.calls[1].options.body,undefined);
+    assert.equal(spotifyControlUrl(f.calls[1].url),true);
+  }
+});
+test('invalid shuffle, repeat and seek inputs never contact Spotify',async()=>{
+  const f=fixture();
+  for(const body of [{action:'shuffle'},...['true',0,null].map(state=>({action:'shuffle',state})),{action:'repeat',state:'all'},{action:'repeat',state:true},
+    ...[-1,0.5,'42',Number.MAX_SAFE_INTEGER+1,null].map(positionMs=>({action:'seek',positionMs})),{action:'seek',positionMs:1,state:'off'}])
+    await assert.rejects(spotifyControl(f.owner,{}, {...body,deviceId:'device-one'}));
+  assert.equal(f.calls.length,0);
+  for(const suffix of ['shuffle?device_id=x&state=1','repeat?device_id=x&state=all','seek?device_id=x&position_ms=-1','seek?device_id=x&position_ms=9007199254740992','seek?device_id=x&position_ms=1&state=off','repeat?device_id=x&state=off&state=track'])
+    assert.equal(spotifyControlUrl('https://api.spotify.com/v1/me/player/'+suffix),false);
+});
+test('player exposes actual shuffle/repeat state and preserves unknown values as unknown',async()=>{
+  for(const [fields,shuffle,repeat] of [[{shuffle_state:true,repeat_state:'context'},true,'context'],[{shuffle_state:false,repeat_state:'off'},false,'off'],[{},null,null]]){
+    const f=fixture(async url=>url.endsWith('/devices')?{status:200,data:{devices:[]}}:{status:200,data:{is_playing:false,...fields}});
+    const state=await spotifyPlayer(f.owner,{});assert.equal(state.playback.shuffleState,shuffle);assert.equal(state.playback.repeatState,repeat);
+  }
+});
+test('an unexpected success status does not falsely confirm a player mutation or replay it',async()=>{
+  const f=fixture(async url=>url.endsWith('/devices')?{status:200,data:{devices:[{id:'device-one'}]}}:{status:202,data:{}});
+  await assert.rejects(spotifyControl(f.owner,{}, {action:'next',deviceId:'device-one'}),error=>error.kind==='spotify_uncertain');
+  assert.equal(f.calls.length,2);
 });

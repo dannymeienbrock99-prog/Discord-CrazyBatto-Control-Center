@@ -26,6 +26,8 @@ releases/
 *.exe
 *.apk
 *.aab
+*.streamDeckPlugin
+pairing.json
 *.idsig
 *.zip
 *.tar

@@ -55,13 +55,13 @@ service.controlExtras = new ControlExtras(service);
 service.accounts.gamingSetups = service.gamingSetups;
 service.botAdmin = new BotService(service);
 service.botGateway = new BotGateway(config, {
-  onDispatch: packet => Promise.allSettled([
+  onDispatch: packet => { service.musicBot?.gatewayEvent(packet); return Promise.allSettled([
     Promise.resolve().then(() => service.communityControl.gatewayEvent(packet)),
     Promise.resolve().then(() => service.autoJoinRole.gatewayEvent(packet)),
     Promise.resolve().then(() => service.controlExtras.gatewayEvent(packet)),
-  ]),
+  ]); },
   intentResolver: () => service.controlExtras.gatewayIntents(),
-  onConnectionState: phase => service.controlExtras.connectionState(phase),
+  onConnectionState: phase => { service.musicBot?.connectionState(phase); service.controlExtras.connectionState(phase); },
 });
 service.musicBot = new MusicBot(service);
 service.musicRemote = new MusicRemote(service);

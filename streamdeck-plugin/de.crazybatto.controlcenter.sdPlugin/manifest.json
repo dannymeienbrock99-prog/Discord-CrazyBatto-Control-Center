@@ -1,0 +1,329 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "UUID": "de.crazybatto.controlcenter",
+  "Name": "Crazy_Batto Control Center",
+  "Version": "1.0.0.0",
+  "Author": "Crazy_Batto",
+  "Description": "Spotify, Discord-Bot-Musik und alle Bereiche deines Control Centers mit deinem Stream Deck steuern.",
+  "Category": "Crazy_Batto Control Center",
+  "CategoryIcon": "imgs/crown",
+  "Icon": "imgs/plugin",
+  "CodePath": "bin/plugin.cjs",
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "7.1"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Nodejs": {
+    "Version": "24"
+  },
+  "PropertyInspectorPath": "ui/inspector.html",
+  "URL": "https://crazybatto.de",
+  "Actions": [
+    {
+      "Name": "Spotify · Wiedergabe",
+      "UUID": "de.crazybatto.controlcenter.spotify.toggle",
+      "Icon": "imgs/play",
+      "Tooltip": "Spotify · Wiedergabe",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/play",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Spotify · Nächster Titel",
+      "UUID": "de.crazybatto.controlcenter.spotify.next",
+      "Icon": "imgs/next",
+      "Tooltip": "Spotify · Nächster Titel",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/next",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Spotify · Vorheriger Titel",
+      "UUID": "de.crazybatto.controlcenter.spotify.previous",
+      "Icon": "imgs/previous",
+      "Tooltip": "Spotify · Vorheriger Titel",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/previous",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Spotify · Lautstärke",
+      "UUID": "de.crazybatto.controlcenter.spotify.volume",
+      "Icon": "imgs/volume",
+      "Tooltip": "Spotify · Lautstärke",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/volume",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Spotify · Zufall",
+      "UUID": "de.crazybatto.controlcenter.spotify.shuffle",
+      "Icon": "imgs/shuffle",
+      "Tooltip": "Spotify · Zufall",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/shuffle",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Spotify · Wiederholen",
+      "UUID": "de.crazybatto.controlcenter.spotify.repeat",
+      "Icon": "imgs/repeat",
+      "Tooltip": "Spotify · Wiederholen",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/repeat",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Spotify · Gerät wechseln",
+      "UUID": "de.crazybatto.controlcenter.spotify.transfer",
+      "Icon": "imgs/device",
+      "Tooltip": "Spotify · Gerät wechseln",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/device",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Spotify · Favorit starten",
+      "UUID": "de.crazybatto.controlcenter.spotify.context",
+      "Icon": "imgs/star",
+      "Tooltip": "Spotify · Favorit starten",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/star",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Bot · Meinem Sprachkanal beitreten",
+      "UUID": "de.crazybatto.controlcenter.music.join",
+      "Icon": "imgs/join",
+      "Tooltip": "Bot · Meinem Sprachkanal beitreten",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/join",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Bot · Sprachkanal verlassen",
+      "UUID": "de.crazybatto.controlcenter.music.leave",
+      "Icon": "imgs/leave",
+      "Tooltip": "Bot · Sprachkanal verlassen",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/leave",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Bot · Musik steuern",
+      "UUID": "de.crazybatto.controlcenter.music.toggle",
+      "Icon": "imgs/music",
+      "Tooltip": "Bot · Musik steuern",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/music",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Bot · Nächster Titel",
+      "UUID": "de.crazybatto.controlcenter.music.next",
+      "Icon": "imgs/next",
+      "Tooltip": "Bot · Nächster Titel",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/next",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Bot · Vorheriger Titel",
+      "UUID": "de.crazybatto.controlcenter.music.previous",
+      "Icon": "imgs/previous",
+      "Tooltip": "Bot · Vorheriger Titel",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/previous",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Bot · Lautstärke",
+      "UUID": "de.crazybatto.controlcenter.music.volume",
+      "Icon": "imgs/volume",
+      "Tooltip": "Bot · Lautstärke",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/volume",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    },
+    {
+      "Name": "Control Center · Bereich öffnen",
+      "UUID": "de.crazybatto.controlcenter.app.open",
+      "Icon": "imgs/crown",
+      "Tooltip": "Control Center · Bereich öffnen",
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/crown",
+          "TitleAlignment": "bottom",
+          "TitleColor": "#f5e5ba",
+          "FontSize": 10,
+          "FontFamily": "Arial",
+          "ShowTitle": true
+        }
+      ]
+    }
+  ]
+}

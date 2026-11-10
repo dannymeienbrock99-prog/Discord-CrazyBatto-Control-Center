@@ -28,6 +28,12 @@ Die ID ist keine Bot-Berechtigung und kein Token. Der tatsächliche Bot-Token bl
 
 Die Website-Adresse wird in der App gewählt und die Betreiberanmeldung geprüft. SFTP verwendet eigene lokale Verbindungsprofile. Einmalige Hostschlüssel-Freigaben prüfen; gespeicherte Profile, Passwörter und lokale BetterDiscord-Konfigurationen nicht in Git übernehmen.
 
+## Stream Deck
+
+Im Ordner `streamdeck-plugin` mit `npm ci`, `npm test`, `node scripts/build-assets.cjs` und `npm run validate` prüfen. `npm run package` erzeugt das private Pluginpaket unter `streamdeck-plugin/release/`. Stream Deck ab 7.1 verwaltet die benötigte Node-24-Laufzeit. Das Paket lokal installieren, Control Center ab 3.6.0 öffnen und dort unter **Stream Deck** die Verbindung einschalten. Den angezeigten Schlüssel in der Plugin-Einstellung mit **Verbinden** übernehmen. Das Center und das Plugin verwenden nur die lokale Verbindung auf diesem PC.
+
+Spotify im Center oder auf der eigenen Website verbinden und das gewünschte Spotify-Gerät öffnen. Spotify-Gerätesteuerung und die Bot-Wiedergabe aus der eigenen Mediathek sind getrennte Abläufe; Spotify-Audio wird nicht durch den Bot weitergeleitet. Die Verwaltungsaktionen hinter einer geöffneten Center-Seite bleiben bewusste Benutzerentscheidungen.
+
 ## Android-Control
 
 Den Ordner `android-control` in Android Studio öffnen. Benötigt werden SDK 36 und JDK 17; die Gradle-Projektdateien sind enthalten. Alternativ mit einem installierten Gradle 8.14.3 `gradle :app:testDebugUnitTest :app:assembleDebug` ausführen. Der persönliche Debug-Build ist kein allgemein freigegebener Download.
@@ -35,6 +41,8 @@ Den Ordner `android-control` in Android Studio öffnen. Benötigt werden SDK 36 
 Für einen anderen Host die URL-/Host-Angaben in `AndroidManifest.xml`, `ControlActivity.java`, `ControlLaunchUrl.java` und den Ressourcen passend aktualisieren. Für eine echte Trusted Web Activity den eigenen Signierzertifikat-Fingerabdruck in `CONTROL_APP_SIGNER_SHA256` und die Digital-Asset-Links-Zuordnung korrekt bereitstellen. Die private Signierdatei bleibt außerhalb des Repositories. Der bestehende Assetlinks-Endpunkt hängt am separat verifizierten Chat-App-Release; ohne dieses optionale Release müssen die eigenen Digital Asset Links unabhängig statisch bereitgestellt werden. Andernfalls öffnet sich die sichere Browserdarstellung, jedoch ohne bestätigten TWA-Vollbildmodus.
 
 Auf dem Handy anmelden, Benachrichtigungen erlauben, Testnachricht auslösen und Ton/Pop-up prüfen. Android-Energiesparen, „Nicht stören“ und abgeschaltete Kanäle können die Darstellung beeinflussen. Eine Registrierung am Server allein garantiert keine sichtbare Handybenachrichtigung.
+
+Nach dem Serverupdate die Handyverwaltung einmal öffnen, damit der aktive Benachrichtigungsdienst seine neue Version bestätigt. Setup-Hinweise bleiben bis dahin gespeichert; die Oberfläche zeigt an, ob Gaming-Setup-Mitteilungen bereits unterstützt werden. Die Aktualisierung der mobilen Website erfordert keine neue Android-APK.
 
 ## Robot-SchichtLog
 

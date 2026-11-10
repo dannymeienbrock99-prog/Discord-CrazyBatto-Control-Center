@@ -26,7 +26,7 @@ export class MusicBot {
     this.service = service; this.loadVoice = loadVoice; this.spawn = spawnImpl;
     this.queue = []; this.index = -1; this.generation = 0; this.channelId = null; this.volume = 70;
     this.problem = null; this.jobs = Promise.resolve(); this.pending = 0; this.seen = new Map();
-    this.accessCache = new Map(); this.connectionEpoch = 0;
+    this.accessCache = new Map(); this.connectionEpoch = 0; this.stopEpoch = 0; this.voiceOwnerId = null; this.pendingLeaveEpoch = null; this.lastLeave = null;
   }
   status() {
     const playerState = this.player?.state.status;
@@ -40,10 +40,51 @@ export class MusicBot {
       elapsed: Math.floor((this.resource?.playbackDuration || 0) / 1000), pending: this.pending, message: this.problem };
   }
   queueView() { return this.queue.map((track, index) => ({ ...musicTrack(track), position: index + 1, current: index === this.index })); }
+  leaveWithOwner() {
+    this.problem = 'Der Musikbot hat den Sprachkanal verlassen, weil das Mitglied, das ihn gestartet hat, gegangen ist oder den Kanal gewechselt hat.';
+    this.stop();
+  }
+  reconcileVoice() {
+    const gateway = this.service.botGateway;
+    if (!this.voiceOwnerId || !this.channelId) {
+      const orphan = !this.connection && this.service.config.musicBotEnabled && this.service.botAdmin.settings().enabled && gateway.voiceChannel(gateway.botUserId || this.service.config.clientId);
+      if (orphan && this.pendingLeaveEpoch === null && (this.lastLeave?.musicEpoch !== this.connectionEpoch || this.lastLeave?.gatewayEpoch !== gateway.epoch)) this.pendingLeaveEpoch = this.connectionEpoch;
+      this.flushPendingLeave(); return;
+    }
+    if (gateway.voiceChannel(this.voiceOwnerId) !== this.channelId) { this.leaveWithOwner(); return; }
+    if (gateway.voiceChannel(gateway.botUserId || this.service.config.clientId) !== this.channelId) this.stop();
+  }
+  flushPendingLeave() {
+    if (this.pendingLeaveEpoch === null) return;
+    if (this.pendingLeaveEpoch !== this.connectionEpoch || this.connection || this.voiceOwnerId) { this.pendingLeaveEpoch = null; return; }
+    const gateway = this.service.botGateway;
+    if (!gateway.status().ready) return;
+    if (!gateway.voiceChannel(gateway.botUserId || this.service.config.clientId)) { this.pendingLeaveEpoch = null; this.lastLeave = null; }
+    else if (gateway.leaveVoice()) { this.pendingLeaveEpoch = null; this.lastLeave = { musicEpoch: this.connectionEpoch, gatewayEpoch: gateway.epoch }; }
+  }
+  gatewayEvent(packet) {
+    const data = packet?.d;
+    if (data?.guild_id !== this.service.config.discordGuildId && data?.id !== this.service.config.discordGuildId) return;
+    if (packet.t === 'GUILD_CREATE' && Array.isArray(data.voice_states) && !data.unavailable) { this.reconcileVoice(); return; }
+    if (packet.t === 'VOICE_STATE_UPDATE' && data.user_id === (this.service.botGateway.botUserId || this.service.config.clientId) && data.channel_id === null) { this.pendingLeaveEpoch = null; this.lastLeave = null; }
+    if (!this.voiceOwnerId || !this.channelId) return;
+    if (packet.t === 'VOICE_STATE_UPDATE' && validId(data.user_id) && (data.channel_id === null || validId(data.channel_id))) {
+      if (data.user_id === this.voiceOwnerId && data.channel_id !== this.channelId) this.leaveWithOwner();
+      else if (data.user_id === (this.service.botGateway.botUserId || this.service.config.clientId) && data.channel_id !== this.channelId) this.stop();
+    } else if (packet.t === 'GUILD_DELETE') this.stop();
+  }
+  connectionState(phase) {
+    // READY/reconnecting can still expose the previous voice cache. Reconcile
+    // only after a fresh GUILD_CREATE snapshot or a complete RESUMED replay.
+    if (phase === 'resumed') this.reconcileVoice();
+    else if (phase === 'stopped' || phase === 'error') this.stop();
+  }
   enqueue(task) {
     assert(this.pending < 8, 'Der Musikbot ist beschäftigt. Bitte kurz warten.', 'busy', 429);
+    const stoppedAt = this.stopEpoch;
+    const run = () => { assert(stoppedAt === this.stopEpoch, 'Die Musiksitzung wurde beendet. Bitte den Befehl erneut auslösen.', 'conflict', 409); return task(); };
     this.pending++;
-    const job = this.jobs.then(task, task).finally(() => { this.pending--; });
+    const job = this.jobs.then(run, run).finally(() => { this.pending--; });
     this.jobs = job.catch(() => {});
     return job;
   }
@@ -117,12 +158,14 @@ export class MusicBot {
   }
   async control(userId, input, authorize = () => {}) {
     authorize();
+    const stoppedAt = this.stopEpoch;
     const { action } = input;
     const access = await this.requireVoice(userId, input.channelId || null);
     authorize();
     const channelId = access.channel.id;
     const guard = () => {
       authorize(); this.requireReady();
+      assert(stoppedAt === this.stopEpoch, 'Die Musiksitzung wurde zwischenzeitlich beendet. Bitte erneut starten.', 'conflict', 409);
       assert(this.service.botGateway.voiceChannel(userId) === channelId && (!this.channelId || this.channelId === channelId),
         'Der Sprachkanal wurde gewechselt oder verlassen. Bitte neu laden.', 'forbidden', 403);
     };
@@ -131,7 +174,7 @@ export class MusicBot {
       await this.prepareVoice(); guard();
       await this.requireVoice(userId, channelId); guard();
       const alreadyConnected = this.connection?.state.status === this.voice.VoiceConnectionStatus.Ready;
-      await this.connect(channelId, guard); guard(); this.problem = null;
+      await this.connect(channelId, guard, userId); guard(); this.problem = null;
       return alreadyConnected ? 'Der Bot ist bereits in deinem Sprachkanal verbunden.' : 'Der Bot ist deinem Sprachkanal beigetreten. Du kannst jetzt einen Titel auswählen.';
     }
     if (action === 'list') return this.queue.length ? this.queueView().slice(Math.max(0, this.index), Math.max(0, this.index) + 20).map(track => `${track.position}. ${trackLabel(track)}`).join('\n') : 'Die Warteschlange ist leer.';
@@ -144,8 +187,9 @@ export class MusicBot {
     }
     if (action === 'next' || action === 'previous') {
       assert(this.connection && this.queue.length, 'Die Warteschlange ist leer.');
+      const epoch = this.connectionEpoch;
       if (action === 'previous') this.index = Math.max(-1, this.index - 2);
-      try { await this.next(guard); } catch (error) { this.problem = 'Der nächste Titel konnte nicht geladen werden.'; this.stop(); throw error; }
+      try { await this.next(guard); } catch (error) { if (epoch === this.connectionEpoch) { this.problem = 'Der nächste Titel konnte nicht geladen werden.'; this.stop(); } throw error; }
       return this.queue[this.index] ? 'Wiedergabe: ' + trackLabel(this.queue[this.index]) : 'Playlist zu Ende.';
     }
     assert(action === 'play' || action === 'queue', 'Unbekannte Musikaktion.');
@@ -160,16 +204,17 @@ export class MusicBot {
     const health = await this.service.accounts.storageStatus();
     assert(health.online, health.message, 'unconfigured', 503);
     await this.prepareVoice(); guard();
-    await this.connect(channelId, guard); guard();
+    await this.connect(channelId, guard, userId); guard();
     this.queue = additions; this.index = -1; this.problem = null;
-    try { await this.next(guard); } catch (error) { this.stop(); throw error; }
+    const epoch = this.connectionEpoch;
+    try { await this.next(guard); } catch (error) { if (epoch === this.connectionEpoch) this.stop(); throw error; }
     return 'Wiedergabe: ' + trackLabel(this.queue[this.index]);
   }
   async prepareVoice() {
     try { this.voice ||= await this.loadVoice(); }
     catch (error) { const failure = voiceError(error, 'Die Sprachfunktion konnte auf dem Server nicht geladen werden.'); this.problem = safeMessage(failure.message); throw failure; }
   }
-  async connect(channelId, guard) {
+  async connect(channelId, guard, userId) {
     guard();
     if (this.connection?.state.status === this.voice.VoiceConnectionStatus.Destroyed) this.stop();
     if (this.connection) {
@@ -185,8 +230,9 @@ export class MusicBot {
         const failure = voiceError(error, 'Die bestehende Sprachverbindung ist nicht bereit. Bitte erneut verbinden.'); this.problem = safeMessage(failure.message); throw failure;
       }
     }
+    assert(validId(userId), 'Der Start der Musiksitzung konnte keinem Discord-Mitglied zugeordnet werden.', 'auth', 401);
     const epoch = ++this.connectionEpoch;
-    this.channelId = channelId;
+    this.channelId = channelId; this.voiceOwnerId = userId; this.pendingLeaveEpoch = null; this.lastLeave = null;
     let connection;
     try { connection = this.connection = this.voice.joinVoiceChannel({ channelId, guildId: this.service.config.discordGuildId,
       adapterCreator: this.service.botGateway.voiceAdapter(this.service.config.discordGuildId), selfDeaf: true, selfMute: false, daveEncryption: true }); }
@@ -195,14 +241,17 @@ export class MusicBot {
     connection.on('stateChange', (_old, current) => {
       if (this.connection !== connection) return;
       if (current.status === this.voice.VoiceConnectionStatus.Destroyed) { this.stop(); return; }
-      if (current.status === this.voice.VoiceConnectionStatus.Ready) this.channelId = connection.joinConfig.channelId;
+      if (current.status === this.voice.VoiceConnectionStatus.Ready && connection.joinConfig.channelId !== this.channelId) { this.stop(); return; }
       if (current.status === this.voice.VoiceConnectionStatus.Disconnected) void this.voice.entersState(connection, this.voice.VoiceConnectionStatus.Ready, 15000).catch(() => { if (this.connection === connection) { this.problem = 'Die Discord-Sprachverbindung konnte nicht wiederhergestellt werden. Bitte erneut verbinden.'; this.stop(); } });
     });
     try { await this.voice.entersState(connection, this.voice.VoiceConnectionStatus.Ready, 20000); guard();
       assert(this.connection === connection && epoch === this.connectionEpoch, 'Die Sprachverbindung wurde zwischenzeitlich beendet.', 'conflict', 409);
     } catch (error) {
-      if (this.connection === connection) this.stop();
-      const failure = voiceError(error, 'Discord hat den Sprachbeitritt nicht bestätigt. Bitte Sprachkanalrechte und die ausgehende Sprachverbindung des Servers prüfen.'); this.problem = safeMessage(failure.message); throw failure;
+      const current = this.connection === connection;
+      if (current) this.stop();
+      const failure = voiceError(error, 'Discord hat den Sprachbeitritt nicht bestätigt. Bitte Sprachkanalrechte und die ausgehende Sprachverbindung des Servers prüfen.');
+      if (current || (!this.connection && !this.problem)) this.problem = safeMessage(failure.message);
+      throw failure;
     }
     let player;
     try { player = this.player = this.voice.createAudioPlayer({ behaviors: { noSubscriber: this.voice.NoSubscriberBehavior.Pause } }); }
@@ -211,8 +260,8 @@ export class MusicBot {
     player.on(this.voice.AudioPlayerStatus.Idle, () => {
       if (!this.resource || this.player !== player || this.connection !== connection) return;
       this.resource = null;
-      const generation = this.generation;
-      try { void this.enqueue(async () => { if (generation === this.generation && this.player === player) await this.next(); }).catch(() => { this.problem = 'Der nächste Titel konnte nicht geladen werden.'; this.stop(); }); }
+      const generation = this.generation, epoch = this.connectionEpoch;
+      try { void this.enqueue(async () => { if (generation === this.generation && this.player === player) await this.next(); }).catch(() => { if (epoch === this.connectionEpoch && this.connection === connection) { this.problem = 'Der nächste Titel konnte nicht geladen werden.'; this.stop(); } }); }
       catch { this.problem = 'Die Wiedergabe wurde beendet, weil zu viele Befehle gleichzeitig eingingen.'; this.stop(); }
     });
     try { connection.subscribe(player); }
@@ -231,7 +280,7 @@ export class MusicBot {
     if (this.index >= this.queue.length) { this.stop(); return; }
     const generation = this.generation, track = this.queue[this.index];
     const response = await this.service.accounts.storage.stream(track.id);
-    if (generation !== this.generation) { await response.body?.cancel(); return; }
+    if (generation !== this.generation) { await response.body?.cancel(); throw new AppError('conflict', 'Die Wiedergabe wurde zwischenzeitlich beendet. Bitte erneut starten.', 409); }
     try { authorize(); this.requireReady(); }
     catch (error) { await response.body?.cancel(); this.stop(); throw error; }
     if (response.status !== 200 || !response.body) { await response.body?.cancel(); assert(false, 'Der Musikspeicher kann den Titel nicht liefern.', 'network', 503); }
@@ -244,7 +293,10 @@ export class MusicBot {
     this.resource.volume.setVolume(this.volume / 100); this.player.play(this.resource);
   }
   stop() {
-    this.connectionEpoch++; this.cleanup(); const connection = this.connection; this.connection = null;
+    const needsLeaveConfirmation = !!this.connection || this.pendingLeaveEpoch !== null;
+    this.stopEpoch++; this.connectionEpoch++; this.voiceOwnerId = null;
+    this.pendingLeaveEpoch = needsLeaveConfirmation ? this.connectionEpoch : null;
+    this.cleanup(); const connection = this.connection; this.connection = null;
     if (connection && connection.state.status !== 'destroyed') connection.destroy();
     this.player = null; this.channelId = null; this.queue = []; this.index = -1;
   }

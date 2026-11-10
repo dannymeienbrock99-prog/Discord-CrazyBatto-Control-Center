@@ -40,6 +40,7 @@ const showcasePages = new Map([
 // Only the reviewed website files receive public routes. Source material,
 // private releases and owner uploads are never exposed by this static handler.
 const showcaseAssets = new Map([
+  ['spotify-connect.js', 'text/javascript; charset=utf-8'], ['spotify-connect.css', 'text/css; charset=utf-8'],
   ['control-client.js', 'text/javascript; charset=utf-8'], ['control-mobile.js', 'text/javascript; charset=utf-8'], ['pc-support.js', 'text/javascript; charset=utf-8'], ['control-support.css', 'text/css; charset=utf-8'],
   ['gaming-setups.js', 'text/javascript; charset=utf-8'], ['gaming-setups.css', 'text/css; charset=utf-8'],
   ['birthdays.js', 'text/javascript; charset=utf-8'], ['birthdays-admin.js', 'text/javascript; charset=utf-8'], ['birthdays.css', 'text/css; charset=utf-8'],

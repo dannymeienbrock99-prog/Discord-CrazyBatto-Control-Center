@@ -1,0 +1,7 @@
+node_modules/
+*.streamDeckPlugin
+*.log
+.env*
+!.env.example
+runtime/
+pairing.json

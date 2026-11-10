@@ -24,7 +24,7 @@ export function ensureControlNotices(store) {
   store.db.exec(`CREATE TABLE IF NOT EXISTS control_notice_events(id TEXT PRIMARY KEY,type TEXT NOT NULL,target_id TEXT NOT NULL,revision INTEGER NOT NULL,created_at INTEGER NOT NULL,UNIQUE(type,target_id,revision));`);
 }
 export function controlNotice(store, type, targetId, revision, now) {
-  assert(['member_registered','pc_ticket','pc_order','robot_order'].includes(type) && CONTROL_UUID.test(targetId) && Number.isSafeInteger(revision) && revision >= 0, 'Die Benachrichtigung ist ungültig.');
+  assert(['member_registered','pc_ticket','pc_order','robot_order','gaming_setup'].includes(type) && CONTROL_UUID.test(targetId) && Number.isSafeInteger(revision) && revision >= 0, 'Die Benachrichtigung ist ungültig.');
   store.run('INSERT OR IGNORE INTO control_notice_events(id,type,target_id,revision,created_at) VALUES (?,?,?,?,?)',randomUUID(),type,targetId,revision,now);
 }
 export function controlPage(input, { statuses, kinds = null, defaultLimit = 50 } = {}) {

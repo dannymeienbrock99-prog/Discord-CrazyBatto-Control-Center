@@ -13,6 +13,7 @@ const { ThemesService } = require('./themes.cjs');
 const { LocalDiscordService } = require('./local-discord.cjs');
 const { pickAudio, createAudioPermission } = require('./audio.cjs');
 const { createOwnerProfileActions } = require('./owner-profile.cjs');
+const { StreamDeckBridge, StreamDeckController, PAGES: streamDeckPages } = require('./streamdeck.cjs');
 const V = require('./validation.cjs');
 const ownerProfileAction = createOwnerProfileActions({writeText: text => clipboard.writeText(text), openExternal: url => shell.openExternal(url)});
 
@@ -20,7 +21,7 @@ app.setName('CrazyBatto Discord Admin');
 if (process.platform === 'win32') app.setAppUserModelId('de.crazybatto.discordadmin');
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) app.quit();
-let window, service, storage, connections, website, themes, localDiscord, audioPermission;
+let window, service, storage, connections, website, themes, localDiscord, audioPermission, streamDeck;
 const extrasActions = ['extras.state','extras.automod.list','extras.automod.save','extras.audio.send'];
 const localActions = ['localdiscord.state','localdiscord.install','localdiscord.toggle','localdiscord.settings','localdiscord.save','localdiscord.spectators','localdiscord.history','localdiscord.roles.save','audio.pick','audio.recordPermission','audio.recordEnd'];
 let lastJoinNotificationAt = 0;
@@ -38,6 +39,7 @@ if (!app.isPackaged && process.env.VITE_DEV_SERVER_URL) {
   rendererUrl = url.href;
 }
 const allowed = new Set([
+  'streamdeck.state','streamdeck.configure','streamdeck.copy','streamdeck.rotate',
   ...communityActions,
   ...extrasActions, ...localActions,
   'ownerprofile.copy','ownerprofile.open',
@@ -56,6 +58,14 @@ function trusted(event) {
     && event.senderFrame.url === rendererUrl;
 }
 async function nativeAction(action,payload) {
+  if (action === 'streamdeck.state') return streamDeck.state();
+  if (action === 'streamdeck.configure') {
+    if (Object.keys(payload).some(k=>k!=='enabled') || typeof payload.enabled !== 'boolean') throw Error('Bitte die Stream-Deck-Verbindung ein- oder ausschalten.');
+    const result=payload.enabled?await streamDeck.start():await streamDeck.stop();
+    storage.write('settings',{...storage.read('settings',{}),streamDeckEnabled:payload.enabled});return result;
+  }
+  if (action === 'streamdeck.copy') {clipboard.writeText(streamDeck.copyToken());return {copied:true};}
+  if (action === 'streamdeck.rotate') return streamDeck.rotate();
   if (action === 'ownerprofile.copy' || action === 'ownerprofile.open') return ownerProfileAction(action,payload);
   if (action.startsWith('themes.')) return themes.run(action,payload);
   if (action.startsWith('localdiscord.')) return localDiscord.run(action,payload);
@@ -185,6 +195,17 @@ if (gotLock) app.whenReady().then(()=>{
   service = new AdminService(storage);
   connections = new ConnectionsService({directory:app.getPath('userData'),safeStorage,dialog,getWindow:()=>window});
   website = new WebsiteService({connections});
+  const deckController=new StreamDeckController({website,version:app.getVersion(),openPage:async page=>{
+    if(!streamDeckPages.some(item=>item.id===page))throw Error('Dieser Bereich ist nicht vorhanden.');
+    if(!window||window.isDestroyed())createWindow();
+    if(window.isMinimized())window.restore();window.show();window.focus();
+    window.webContents.send('control-center:navigate',page);
+  }});
+  streamDeck=new StreamDeckBridge({directory:app.getPath('userData'),safeStorage,controller:deckController,execute:task=>{
+    const result=actionQueue.then(async()=>{if(startupReconnect)await startupReconnect;return task();});
+    actionQueue=result.catch(()=>{});return result;
+  }});
+  if(storage.read('settings',{}).streamDeckEnabled===true)streamDeck.start().catch(()=>{});
   themes = new ThemesService({directory:app.getPath('userData'),appDataDirectory:app.getPath('appData'),dialog,getWindow:()=>window});
   localDiscord = new LocalDiscordService({directory:app.getPath('userData'),appDataDirectory:app.getPath('appData'),dialog,getWindow:()=>window});
   audioPermission = createAudioPermission({getWindow:()=>window,getRendererUrl:()=>rendererUrl});
@@ -219,4 +240,5 @@ if (gotLock) app.whenReady().then(()=>{
 });
 app.on('second-instance',()=>{if(window){if(window.isMinimized())window.restore();window.focus();}});
 app.on('window-all-closed',()=>app.quit());
+app.on('before-quit',()=>{void streamDeck?.stop();});
 app.on('activate',()=>{if(!BrowserWindow.getAllWindows().length)createWindow();});

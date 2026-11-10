@@ -139,10 +139,13 @@ function operationRequest(operation, body) {
       return ['PUT','/api/admin/spotify',{...body}];
     case 'spotify.control': {
       object(body);const action=body.action;
-      if(!['play','pause','next','previous','volume','transfer'].includes(action))fail('Diese Spotify-Aktion ist nicht verfügbar.');
-      fields(body,['action','deviceId',...(action==='play'?['uri']:[]),...(action==='volume'?['volume']:[])],['action','deviceId']);
+      if(!['play','pause','next','previous','volume','transfer','shuffle','repeat','seek'].includes(action))fail('Diese Spotify-Aktion ist nicht verfügbar.');
+      fields(body,['action','deviceId',...(action==='play'?['uri']:[]),...(action==='volume'?['volume']:[]),...(['shuffle','repeat'].includes(action)?['state']:[]),...(action==='seek'?['positionMs']:[])],['action','deviceId']);
       if(typeof body.deviceId!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(body.deviceId))fail('Bitte ein gültiges Spotify-Gerät wählen.');
       if(action==='volume'&&(!Number.isInteger(body.volume)||body.volume<0||body.volume>100))fail('Bitte eine Lautstärke von 0 bis 100 wählen.');
+      if(action==='shuffle'&&typeof body.state!=='boolean')fail('Bitte Zufallswiedergabe ein- oder ausschalten.');
+      if(action==='repeat'&&!['off','context','track'].includes(body.state))fail('Bitte eine gültige Wiederholung wählen.');
+      if(action==='seek'&&(!Number.isSafeInteger(body.positionMs)||body.positionMs<0||body.positionMs>86400000))fail('Bitte eine gültige Wiedergabeposition wählen.');
       if(body.uri!==undefined&&(typeof body.uri!=='string'||body.uri.length>1024||!(/^(?:spotify:(?:track|album|playlist):[A-Za-z0-9]{22}|https:\/\/open\.spotify\.com\/(?:intl-[a-z]{2}\/)?(?:track|album|playlist)\/[A-Za-z0-9]{22}\/?(?:\?si=[A-Za-z0-9_-]+)?)$/.test(body.uri))))fail('Bitte einen Spotify-Titel, ein Album oder eine Playlist wählen.');
       return ['POST','/api/spotify/control',{...body}];
     }

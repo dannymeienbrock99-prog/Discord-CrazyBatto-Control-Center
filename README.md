@@ -4,6 +4,8 @@ Ein gemeinsames Verwaltungsprojekt für die CRAZY_BATTO-Website, den Discord-Bot
 
 Dieses Repository enthält den bereinigten Quellcode. Zugangsdaten, Betreiber- und Serverkennungen, Datenbanken, Mitgliederinhalte, gespeicherte Verbindungen, private Signierschlüssel und fertige Installer/APKs gehören nicht zum Repository. Die eigenen Windows- und Android-Builds werden privat verteilt; der öffentliche Quellcode ermöglicht ausdrücklich keinen Zugang zur bestehenden Verwaltung.
 
+Stand **Control Center 3.6.0** mit eigenem **Stream-Deck-Plugin 1.0.0**: Spotify und Bot-Musik per Taste steuern, Verwaltungsbereiche öffnen und bei neuen Gaming-Setup-Einreichungen einen Hinweis zur Freigabe erhalten. Die Musik-Sitzung endet, sobald ihr Initiator den Sprachkanal verlässt oder wechselt. Spotify-Verknüpfung und Freigaben bleiben an das angemeldete Konto gebunden.
+
 ![PC-Hilfe](server/public/showcase/assets/control/dragon-gold-pc-help.png)
 
 ## Was das Control Center kann
@@ -22,12 +24,13 @@ Dieses Repository enthält den bereinigten Quellcode. Zugangsdaten, Betreiber- u
 | Mitglieder | Website-Registrierungen im Center verwalten. Neue Konten benötigen nach E-Mail-Bestätigung die Admin-Freigabe für geschützte Mitgliederfunktionen. Bereits vorhandene Konten bleiben bei der vorgesehenen Migration freigegeben. |
 | Gaming-Setups | Mitglieder reichen Komponenten, Beschreibung und Bilder ein. Erst nach Admin-Freigabe erscheinen Beiträge auf Website und im Discord-Forum; Synchronisation kann erneut angestoßen werden. Eigene Setup-Einbettung und neuer Videokopfbereich mit Standbild und barrierearmer Bewegungssteuerung. |
 | Kalender & Events | Geburtstagskalender mit ausdrücklicher Sichtbarkeitsfreigabe, Registrierung über die Website, Geburtstagsnachrichten, Mitgliederzähler und Eventankündigungen mit Ablaufzeit/Countdown. |
-| Musik & Medien | Mediathek, Abspiellisten, Musiksteuerung und Bot-Wiedergabe im Sprachkanal; getrennte Spotify-Anbindung und eigene Medienverwaltung. |
+| Musik & Medien | Mediathek, Abspiellisten und Bot-Wiedergabe im Sprachkanal. Verlässt der Initiator den Kanal oder wechselt ihn, stoppt der Bot und trennt die Verbindung; er folgt nicht automatisch in einen anderen Kanal. Getrennte Spotify-Anbindung mit Geräteauswahl, Zufall, Wiederholung und Positionssteuerung. |
+| Stream Deck | Eigenes Plugin für Spotify-Wiedergabe/Geräte/Favoriten, Bot-Musik und alle 33 Control-Center-Bereiche. Lokale, widerrufbare Kopplung; das Center muss auf demselben PC geöffnet sein. |
 | Discord-Verwaltung | Server-Icon/Banner, Kanäle, Rollen, Rollenfarben, Bot-Profil, Ereignisse, Protokolle und Einstellungen über die vorhandene serverseitige Bot-Integration. |
 | Erweiterte Moderation | Unterstützte Discord-AutoMod-Regeln prüfen und konfigurieren; freigegebene Audiodateien über die vorgesehenen Bot-Aktionen versenden. |
 | Verbindungsverwaltung | SFTP-Dateimanager mit lokalen/entfernten Verzeichnissen, Upload/Download und gespeicherten Profilen. Zugangsdaten werden lokal geschützt; der SSH-Hostschlüssel wird geprüft. WinSCP-Import übernimmt freigegebene Verbindungsmetadaten. |
 | Lokales Discord | Eigene BetterDiscord-Brücke für kompatible, bereits lokal installierte Erweiterungen und Themen; deren Status und Einstellungen lassen sich im Center verwalten. Fremde Plugins sind nicht mitgeliefert. |
-| Android-Control | Persönliche Verwaltungsoberfläche für Mitgliederfreigaben und Support-/Auftragsansichten, Push-Anmeldung und Testbenachrichtigung; Android-Benachrichtigungskanal mit Ton. |
+| Android-Control | Persönliche Verwaltungsoberfläche für Mitgliederfreigaben, Gaming-Setup-Prüfung und Support-/Auftragsansichten. Hinweise auf neue Setup-Einreichungen mit dauerhafter Versionszuordnung; zurückgezogene oder bereits entschiedene Einreichungen werden nicht nachgemeldet. Push-Anmeldung und Testbenachrichtigung; Android-Benachrichtigungskanal mit Ton. |
 | Robot-SchichtLog | Android-Projekt mit Schicht-/Auftragsaufzeichnungen und Bildern. Optionale Verbindung zum Center zum Prüfen, Nacharbeiten und Löschen synchronisierter Aufträge, einschließlich Konflikt- und Wiederholungsbehandlung. Lokale Daten werden erst nach aktivierter Verbindung synchronisiert. |
 
 ## Was von der Einrichtung abhängt
@@ -45,6 +48,7 @@ Dieses Repository enthält den bereinigten Quellcode. Zugangsdaten, Betreiber- u
 
 ```text
 desktop/          Electron/React-Desktop-App und Windows-Installer-Konfiguration
+streamdeck-plugin/ Eigenes Stream-Deck-Plugin, Einstellungsoberfläche und Tests
 server/           Node-Backend, Discord-Bot-Anbindung und Website-Dateien
 android-control/  Persönliche Android-Verwaltung mit TWA/Benachrichtigungsdienst
 robot-schichtlog/  Robot-SchichtLog-Android-Quellcode
@@ -76,6 +80,8 @@ npm run package
 ```
 
 Die Android-Ordner lassen sich separat in Android Studio öffnen oder mit `gradle :app:assembleDebug` bauen. Signierte Veröffentlichungen benötigen einen eigenen privaten Signierschlüssel.
+
+Das Stream-Deck-Plugin wird separat aus `streamdeck-plugin/` gebaut; es benötigt Stream Deck ab 7.1 und Control Center ab 3.6.0. Einrichtung, Aktionen und Prüfungen stehen in der [Plugin-Anleitung](streamdeck-plugin/README.md). Fertige Pluginpakete bleiben ebenso wie Installer außerhalb des Repositorys.
 
 Eine Neuinstallation benötigt eigene Bot-/Konto-Konfiguration und eine kontrollierte erste Betreiberfreigabe. Die zufällig wirkenden Discord-Nummern in Tests sind synthetische Beispiele, keine Verbindung zum vorhandenen Server. Siehe [Einrichtung](docs/INSTALLATION.md), [Konfiguration](docs/CONFIGURATION.md), [Architektur](docs/ARCHITECTURE.md) und [Datenschutz & Veröffentlichungsumfang](docs/PUBLICATION.md).
 

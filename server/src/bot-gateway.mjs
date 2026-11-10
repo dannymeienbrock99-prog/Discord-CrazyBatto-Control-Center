@@ -24,6 +24,11 @@ export class BotGateway {
     this.readyAt = null; this.ackAt = null; this.phase = 'unconfigured'; this.problem = null;
   }
   voiceChannel(userId) { return this.voiceStates.get(userId) || null; }
+  leaveVoice() {
+    if (this.phase !== 'online' || !/^\d{17,20}$/.test(this.config.discordGuildId)) return false;
+    try { this.send(this.ws, { op: 4, d: { guild_id: this.config.discordGuildId, channel_id: null, self_deaf: true, self_mute: false } }); return true; }
+    catch { return false; }
+  }
   voiceMembers() { return [...this.voiceDetails.values()].map(row => ({ ...row })); }
   applyVoiceControl(userId, operation) {
     if (operation === 'disconnect') { this.voiceStates.delete(userId); this.voiceDetails.delete(userId); }

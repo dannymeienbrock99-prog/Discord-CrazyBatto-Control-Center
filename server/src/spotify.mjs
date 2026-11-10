@@ -46,7 +46,7 @@ export class Spotify {
   constructor(accounts, { fetchImpl = fetch } = {}) {
     this.accounts = accounts; this.store = accounts.store; this.vault = accounts.vault;
     this.config = accounts.config; this.now = accounts.now; this.fetch = fetchImpl;
-    this.refreshes = new Map();
+    this.refreshes = new Map(); this.cooldowns = new Map();
     this.store.transaction(() => this.store.db.exec(`
       CREATE TABLE IF NOT EXISTS spotify_application (
         id INTEGER PRIMARY KEY CHECK(id=1), client_id TEXT NOT NULL, secret TEXT NOT NULL,
@@ -143,6 +143,7 @@ export class Spotify {
         ON CONFLICT(id) DO UPDATE SET client_id=excluded.client_id,secret=excluded.secret,revision=excluded.revision,
         updated_by=excluded.updated_by,updated_at=excluded.updated_at`, clientId, secret, next, admin.id, this.now());
       this.store.run('DELETE FROM spotify_connections'); this.store.run('DELETE FROM spotify_logins');
+      this.cooldowns.clear();
       this.store.audit(admin.id, 'spotify.settings_changed', null, { revision: next }, this.now());
       return this.adminView();
     });
@@ -152,6 +153,9 @@ export class Spotify {
     // Only fixed Spotify endpoints are allowed. User URLs never become fetch targets.
     const allowed = url === TOKEN_URL || url === PROFILE_URL || spotifyControlUrl(url);
     assert(allowed, 'Die Spotify-Anfrage ist ungültig.');
+    const bucket = new URL(url).origin, cooldown = this.cooldowns.get(bucket);
+    if (cooldown?.until > this.now()) throw new AppError(cooldown.kind, cooldown.message, 429, cooldown.until - this.now());
+    this.cooldowns.delete(bucket);
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 12_000);
     let response;
     try {
@@ -164,14 +168,24 @@ export class Spotify {
       if (size) { try { data = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { /* No provider text is returned to clients. */ } }
       if (!response.ok) {
         let error;
-        if (response.status === 429) error = new AppError('spotify_rate_limited', 'Spotify begrenzt gerade die Anfragen. Bitte etwas warten und erneut versuchen.', 429);
+        if (response.status === 429) {
+          const quota = data?.error?.reason === 'QUOTA_EXCEEDED';
+          const seconds = String(response.headers.get('retry-after') || '');
+          const delay = /^\d{1,8}$/.test(seconds) ? Math.max(1000, Math.min(Number(seconds) * 1000, 86400_000)) : quota ? 60_000 : 5000;
+          error = new AppError(quota ? 'spotify_quota' : 'spotify_rate_limited', quota
+            ? 'Das API-Kontingent deiner Spotify-Entwickler-App ist ausgeschöpft. Die App pausiert ihre Abfragen; prüfe das Kontingent im Spotify Developer Dashboard.'
+            : 'Spotify begrenzt gerade die Anfragen. Bitte die angezeigte Wartezeit abwarten und erneut versuchen.', 429, delay);
+          this.cooldowns.set(bucket, { until: this.now() + delay, kind: error.kind, message: error.message });
+        }
         else if (data?.error === 'invalid_grant') error = new AppError('spotify_reconnect', 'Die Spotify-Freigabe ist abgelaufen oder ungültig. Bitte Spotify erneut verbinden.', 409);
         else if (url === TOKEN_URL && [400, 401].includes(response.status)) error = new AppError('spotify_credentials', 'Spotify hat die Zugangsdaten oder die Verbindung nicht bestätigt. Bitte die Einrichtung prüfen.', 400);
         else if (response.status === 401) error = new AppError('spotify_reconnect', 'Die Spotify-Freigabe ist abgelaufen oder ungültig. Bitte Spotify erneut verbinden.', 409);
-        else if (response.status === 403) error = new AppError('spotify_forbidden', 'Spotify erlaubt diese Aktion nicht. Bitte Spotify Premium und die Freigabe deines Kontos in der Spotify-App prüfen.', 403);
-        else if (response.status === 404 && url.startsWith(PLAY_URL)) error = new AppError('spotify_device', 'Das Spotify-Wiedergabegerät ist noch nicht erreichbar. Bitte den Player aktivieren und erneut versuchen.', 409);
+        else if ((response.status === 404 || data?.error?.reason === 'NO_ACTIVE_DEVICE') && spotifyControlUrl(url)) error = new AppError('spotify_device', 'Das Spotify-Wiedergabegerät ist nicht erreichbar. Öffne Spotify auf dem Zielgerät und lade danach die Geräteliste neu.', 409);
+        else if (response.status === 403 && data?.error?.reason === 'RESTRICTION_VIOLATED') error = new AppError('spotify_restricted', 'Spotify erlaubt diesen Steuerbefehl für das aktuelle Gerät oder den aktuellen Inhalt nicht.', 403);
+        else if (response.status === 403) error = new AppError('spotify_forbidden', 'Spotify erlaubt diese Aktion nicht. Prüfe Spotify Premium, die angeforderten Berechtigungen und ob dieses Konto in der Nutzerfreigabe deiner Spotify-Entwickler-App eingetragen ist.', 403);
         else error = new AppError('spotify_unavailable', 'Spotify konnte die Anfrage gerade nicht abschließen. Bitte später erneut versuchen.', 503);
         error.spotifyInvalidGrant = data?.error === 'invalid_grant';
+        error.spotifyUnauthorized = response.status === 401 && url !== TOKEN_URL;
         throw error;
       }
       return { status: response.status, data };
@@ -299,11 +313,14 @@ export class Spotify {
       this.seal(grant), grant.expiresAt, row.user_id, row.generation, row.config_revision);
     assert(Number(updated.changes) === 1, 'Die Spotify-Verbindung wurde beendet.', 'spotify_disconnected', 409);
   }
-  async access(context) {
+  async access(context, { rejectedAccessToken } = {}) {
     const user = this.accounts.assertCurrent(context), app = this.configured();
     let row = this.store.get('SELECT * FROM spotify_connections WHERE user_id=?', user.id);
     assert(row && row.config_revision === app.revision && row.generation === this.generation(user.id), 'Bitte dein Spotify-Konto zuerst verbinden.', 'spotify_disconnected', 409);
-    if (row.expires_at <= this.now() + 60_000) {
+    // A 401 can arrive before our local expiry (clock skew or early invalidation).
+    // Another concurrent read may already have refreshed the rejected token.
+    const rejected = typeof rejectedAccessToken === 'string' && this.open(row.tokens)?.accessToken === rejectedAccessToken;
+    if (row.expires_at <= this.now() + 60_000 || rejected) {
       const key = user.id + ':' + row.config_revision + ':' + row.generation;
       if (!this.refreshes.has(key)) {
         const work = this.refresh(context, row); this.refreshes.set(key, work);
@@ -318,6 +335,32 @@ export class Spotify {
     const grant = this.open(row.tokens);
     assert(validToken(grant.accessToken) && row.expires_at > this.now(), 'Bitte Spotify erneut verbinden.', 'spotify_reconnect', 409);
     return { accessToken: grant.accessToken, expiresAt: row.expires_at, generation: row.generation, configRevision: row.config_revision };
+  }
+  async authorizedRequest(context, url, options = {}, binding = null) {
+    let token = await this.access(context);
+    const expected = binding || token;
+    const guard = () => this.assertBinding(context, expected.configRevision, expected.generation);
+    guard();
+    const send = () => this.request(url, { ...options, headers: { ...options.headers, Authorization: 'Bearer ' + token.accessToken } });
+    try { const response = await send(); guard(); return response; }
+    catch (error) {
+      guard();
+      // Only idempotent reads are retried. A command with uncertain delivery is
+      // never replayed, especially next/previous/transfer.
+      if (!error.spotifyUnauthorized || !['GET','HEAD'].includes(options.method || 'GET')) throw error;
+      token = await this.access(context, { rejectedAccessToken: token.accessToken }); guard();
+      try { const response = await send(); guard(); return response; }
+      catch (retryError) {
+        guard();
+        if (retryError.spotifyUnauthorized) {
+          const user = this.accounts.assertCurrent(context);
+          const row = this.store.get('SELECT * FROM spotify_connections WHERE user_id=?', user.id);
+          if (row?.generation === expected.generation && row.config_revision === expected.configRevision && this.open(row.tokens)?.accessToken === token.accessToken)
+            this.store.run('DELETE FROM spotify_connections WHERE user_id=? AND generation=? AND config_revision=?', user.id, expected.generation, expected.configRevision);
+        }
+        throw retryError;
+      }
+    }
   }
   disconnect(context, value) {
     fields(value, []); const user = this.accounts.assertCurrent(context);
@@ -334,14 +377,17 @@ export class Spotify {
     const user = this.accounts.assertCurrent(context); this.accounts.limit('spotify:play:' + user.id, 30);
     const token = await this.access(context);
     this.assertBinding(context, token.configRevision, token.generation);
-    await this.request(PLAY_URL + '?device_id=' + encodeURIComponent(value.deviceId), { method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token.accessToken },
-      body: JSON.stringify(media.type === 'track' ? { uris: [media.uri] } : { context_uri: media.uri }) });
+    const result = await this.authorizedRequest(context, PLAY_URL + '?device_id=' + encodeURIComponent(value.deviceId), { method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(media.type === 'track' ? { uris: [media.uri] } : { context_uri: media.uri }) }, token);
+    assert(result.status === 204, 'Spotify hat den Wiedergabebefehl nicht eindeutig bestätigt. Bitte den aktuellen Playerstatus prüfen.', 'spotify_uncertain', 502);
     this.assertBinding(context, token.configRevision, token.generation);
     return { ok: true };
   }
   async handle(req, res) {
     const url = new URL(req.url, 'http://local.invalid'), route = url.pathname;
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Vary', 'Cookie, Authorization');
     if (req.method === 'GET' && route === '/api/spotify/callback') return await this.callback(req, res, url);
     const admin = route === '/api/admin/spotify' || route.startsWith('/api/admin/spotify/');
     const mutation = !['GET', 'HEAD'].includes(req.method);
