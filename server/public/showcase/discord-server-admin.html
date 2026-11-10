@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101216">
+  <title>Discord-Server verwalten – Crazy_Batto</title>
+  <link rel="icon" href="assets/logo.jpeg"><link rel="stylesheet" href="assets/site.css"><link rel="stylesheet" href="assets/account.css"><link rel="stylesheet" href="assets/discord-server.css">
+  <link rel="stylesheet" href="assets/cookie-consent.css"><script src="assets/site.js" defer></script><script src="assets/cookie-consent.js" defer></script><script type="module" src="assets/discord-server-admin.js"></script>
+</head>
+<body><div id="cb-website" class="cb-site"><div class="cb-shell">
+  <header class="cb-header"><div class="cb-header-row">
+    <a class="cb-brand" href="index.html"><img src="assets/logo.jpeg" width="1122" height="1402" alt="Crazy_Batto-Drachenlogo"><span>Crazy_Batto<small>HARDWARE · GAMING · KOOPERATIONSPARTNER</small></span></a>
+    <nav class="cb-nav" aria-label="Hauptnavigation"><a href="index.html">Start</a><a href="discord-server.html">Discord-Server</a><a href="admin.html">Admin-Verwaltung</a><a href="discord-server-admin.html" aria-current="page">Server verwalten</a><a href="registrierung.html">Mein Konto</a></nav>
+  </div></header>
+  <main class="cb-account-wrap cb-directory-admin" id="directoryAdmin">
+    <div class="cb-account-heading"><h1>Discord-Server verwalten.</h1><p>Wähle aus, welche Communities auf deiner Webseite erscheinen. Lege Beschreibung, Banner und Reihenfolge fest.</p></div>
+    <div class="cb-account-actions"><button id="directoryReload" class="cb-account-button secondary" type="button">Gespeicherten Stand laden</button><a class="cb-account-button secondary" href="discord-server.html">Öffentliche Übersicht</a><a class="cb-account-button secondary" href="admin.html">Zur Admin-Verwaltung</a></div>
+    <p id="directoryFeedback" class="cb-account-feedback" role="status" aria-live="polite">Administrator-Rechte werden geprüft …</p>
+    <section id="directoryGate" class="cb-account-card" hidden><h2>Nur für Administratoren</h2><p id="directoryGateCopy">Melde dich mit deinem bestätigten Administratorkonto an, um die Serverübersicht zu verwalten.</p><a class="cb-account-button" href="registrierung.html">Zur Anmeldung</a></section>
+    <section id="directoryDiscard" class="cb-account-card" aria-labelledby="directoryDiscardTitle" hidden><h2 id="directoryDiscardTitle">Ungespeicherte Änderungen verwerfen?</h2><p>Beim Neuladen wird dein Entwurf durch den zuletzt gespeicherten Stand ersetzt.</p><div class="cb-account-actions"><button id="directoryDiscardConfirm" class="cb-account-button" type="button">Änderungen verwerfen und laden</button><button id="directoryDiscardCancel" class="cb-account-button secondary" type="button">Entwurf behalten</button></div></section>
+    <section id="directoryEditor" hidden>
+      <p class="cb-account-help">Nur Einträge mit „Öffentlich anzeigen“ erscheinen nach dem Speichern in der Übersicht. Private Kanäle und Mitgliedernamen werden dort nicht angezeigt. Einträge aus dieser Liste zu entfernen verändert den Discord-Server nicht.</p>
+      <form id="directoryForm" class="cb-account-form">
+        <p id="directoryCount" class="cb-account-help"></p>
+        <div id="directoryEntries"></div>
+        <p id="directoryEmpty" class="cb-account-help" hidden>Noch kein Server eingetragen. Füge eine Discord-Einladung oder Server-ID hinzu.</p>
+        <div class="cb-account-actions"><button id="directoryAdd" class="cb-account-button secondary" type="button">Server hinzufügen</button><button id="directorySave" class="cb-account-button" type="submit" disabled>Änderungen speichern</button></div>
+        <p id="directoryDraftState" class="cb-account-help">Änderungen werden erst beim Speichern veröffentlicht.</p>
+      </form>
+    </section>
+    <noscript><p class="cb-account-feedback">Aktiviere JavaScript, um die Serverübersicht zu verwalten.</p></noscript>
+  </main>
+  <footer class="cb-footer"><span class="cb-footer-brand">Crazy_Batto · Kooperationspartner</span><a href="index.html#cb-kontakt">Kontakt</a><a href="impressum.html">Impressum</a></footer>
+</div></div><nav class="cb-cookie-footer" aria-label="Datenschutzeinstellungen"><a href="cookies.html">Cookies &amp; Speicher</a><button type="button" data-cookie-settings>Cookie-Einstellungen</button></nav></body>
+</html>

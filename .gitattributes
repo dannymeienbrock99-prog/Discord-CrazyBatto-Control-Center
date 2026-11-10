@@ -1,0 +1,12 @@
+# Preserve source bytes: generated local-companion headers verify source hashes.
+# This also keeps the reviewed publication manifest identical to Git blobs.
+* -text
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.mp4 binary
+*.woff2 binary
+

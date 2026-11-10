@@ -1,0 +1,65 @@
+#cb-website .pc-inbox { grid-template-columns:minmax(240px,.65fr) minmax(0,1.6fr); gap:22px; }
+#cb-website .pc-sidebar { min-width:0; }
+#cb-website .pc-sidebar > h2 { font-size:19px; margin:24px 0 14px; }
+#cb-website .pc-directory { margin:0; padding:18px; }
+#cb-website .pc-directory > summary { cursor:pointer; font-weight:700; color:#f0d9a1; font-size:17px; }
+#cb-website .pc-directory > label { display:grid; gap:8px; margin-top:20px; font-size:14px; }
+#cb-website .pc-directory input { width:100%; min-width:0; box-sizing:border-box; background:#0c1015; color:#eee; border:1px solid #655338; border-radius:7px; padding:12px; font:inherit; }
+#cb-website .pc-members { display:grid; gap:10px; max-height:440px; overflow:auto; }
+#cb-website .pc-members .cc-button { justify-content:flex-start; text-align:left; overflow-wrap:anywhere; font-size:14px; }
+#cb-website .pc-connection { color:#b8dbbe; display:flex; gap:9px; align-items:center; font-size:14px; margin:0 0 20px; }
+#cb-website .pc-connection::before { content:''; width:8px; height:8px; border-radius:50%; background:#8ec69b; flex:none; }
+#cb-website .pc-connection.is-offline { color:#edc48b; }
+#cb-website .pc-connection.is-offline::before { background:#edc48b; }
+#cb-website .pc-chat { padding:24px; overflow:hidden; }
+#cb-website .pc-chat-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; padding-bottom:15px; border-bottom:1px solid #443d30; }
+#cb-website .pc-chat-heading h2 { margin:0; font-size:26px; overflow-wrap:anywhere; }
+#cb-website .pc-privacy { color:#bfb6a2; margin:14px 0; font-size:13px; }
+#cb-website .pc-privacy summary { cursor:pointer; }
+#cb-website .pc-introduction { padding:14px; border-left:3px solid #c5a366; background:#191a1e; border-radius:3px; margin:14px 0; font-size:14px; }
+#cb-website .pc-introduction p { margin:6px 0 0; }
+#cb-website .pc-decisions:empty, #cb-website .pc-chat > .cc-feedback:empty { display:none; }
+#cb-website .pc-history { display:flex; flex-direction:column; height:clamp(260px,42vh,480px); overflow:auto; overscroll-behavior:contain; padding:8px; margin:16px 0; border-radius:8px; background:#0c101580; }
+#cb-website .pc-history .cc-message { align-self:flex-start; width:fit-content; max-width:85%; box-sizing:border-box; }
+#cb-website .pc-history .cc-message.is-own { align-self:flex-end; }
+#cb-website .pc-history .cc-message strong { font-size:13px; color:#cfbd99; }
+#cb-website .pc-history .cc-message p { white-space:pre-wrap; overflow-wrap:anywhere; }
+#cb-website .pc-empty-history { margin:auto; color:#aaa293; font-size:14px; }
+#cb-website .pc-compose { border-top:1px solid #443d30; padding-top:16px; margin:0; gap:10px; }
+#cb-website .pc-compose textarea { min-height:84px; resize:vertical; }
+#cb-website .pc-compose > .cc-button { justify-self:end; min-width:110px; }
+#cb-website .pc-compose .cc-feedback { margin:0; min-height:0; font-size:13px; }
+#cb-website .pc-key-help { font-size:12px; margin:0; }
+#cb-website .pc-unread { width:fit-content; background:#d8bb77; color:#18140c; padding:3px 9px; border-radius:20px; font-size:12px; font-weight:700; }
+#cb-website .pc-sidebar .cc-thread-button { position:relative; }
+#cb-website .pc-sidebar .cc-thread-list { max-height:560px; overflow:auto; }
+@media(max-width:760px) {
+  #cb-website .pc-inbox { grid-template-columns:minmax(0,1fr); }
+  #cb-website .pc-sidebar .cc-thread-list { max-height:200px; }
+  #cb-website .pc-chat { padding:17px 12px; }
+  #cb-website .pc-chat-heading h2 { font-size:22px; }
+  #cb-website .pc-history { height:330px; }
+  #cb-website .pc-history .cc-message { max-width:94%; padding:12px; }
+}
+
+/* Installed Chat app: the conversation gets the space otherwise used by the website introduction. */
+html.cb-chat-app #cb-website { min-height:100dvh; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background:#101114; }
+html.cb-chat-app #cb-website .cb-shell { min-height:100dvh; border:0; border-radius:0; max-width:1280px; }
+html.cb-chat-app #cb-website .cb-header-row { padding:10px 16px; gap:10px; }
+html.cb-chat-app #cb-website .cb-brand { font-size:19px; }
+html.cb-chat-app #cb-website .cb-brand img { width:32px; height:40px; flex-basis:32px; }
+html.cb-chat-app #cb-website .cb-brand small { display:none; }
+html.cb-chat-app #cb-website .cc-wrap { padding:18px 16px 24px; }
+html.cb-chat-app #cb-website .cc-page-heading h1 { font-size:26px; margin:0; }
+html.cb-chat-app #cb-website .cc-page-heading p { display:none; }
+html.cb-chat-app #cb-website .pc-history { height:clamp(260px,48dvh,600px); }
+html.cb-chat-app #cb-website .pc-connection { font-size:12px; margin-bottom:12px; }
+html.cb-chat-app #cb-website .pc-sidebar .cc-thread-list { max-height:170px; }
+html.cb-chat-app #cb-website .pc-introduction { font-size:12px; padding:10px; }
+html.cb-chat-app #cb-website .pc-key-help { display:none; }
+@media(max-width:760px) {
+  html.cb-chat-app #cb-website .pc-chat { padding:12px 10px; }
+  html.cb-chat-app #cb-website .pc-history .cc-message { max-width:96%; }
+  html.cb-chat-app #cb-website .pc-compose textarea { min-height:62px; }
+  html.cb-chat-app #cb-website .pc-inbox { gap:14px; }
+}

@@ -1,0 +1,145 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#050609">
+  <title>Crazy_Batto – ROG Music Player</title>
+  <meta name="description" content="Crazy_Batto Musikplayer im schwarz-goldenen ROG-Design mit Playlist, großem Mausfoto und Lichteffekten.">
+  <link rel="icon" href="assets/logo.jpeg" type="image/jpeg">
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/player.css">
+  <link rel="stylesheet" href="assets/player-effects.css">
+  <link rel="stylesheet" href="assets/account.css">
+  <link rel="stylesheet" href="assets/extensions.css">
+  <link rel="preload" href="assets/fonts/oxanium-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <script src="assets/site.js" defer></script>
+  <script src="assets/player-visualizer.js" defer></script>
+  <script src="assets/player-effects.js" defer></script>
+  <script src="assets/player-startup.js" defer></script>
+  <script id="playerModule" type="module" src="assets/player.js"></script>
+<link rel="stylesheet" href="assets/cookie-consent.css"><script src="assets/cookie-consent.js" defer></script></head>
+<body class="cb-player-layout">
+<div id="cb-website" class="cb-site" data-preview="false" data-start-page="player">
+  <div class="cb-shell">
+    <main>
+      <section class="cb-playlist-manager" aria-labelledby="playlistManagerTitle">
+        <div class="cb-playlist-manager-heading"><div><h2 id="playlistManagerTitle">Deine Playlists</h2><p>Musik auswählen, zusammenstellen und gemeinsam hören.</p></div><button id="createPlaylist" class="cb-playlist-primary" type="button" disabled><span aria-hidden="true">＋</span> Neue Playlist</button></div>
+        <div class="cb-playlist-toolbar"><label for="playlistSelect">Playlist auswählen</label><select id="playlistSelect"><option value="all">Alle Titel</option></select><button id="editPlaylist" type="button" disabled>Playlist bearbeiten</button></div>
+        <p id="playlistAccessHint" class="cb-playlist-access">Dein Konto wird geprüft …</p>
+      </section>
+      <section class="cb-player-page" aria-labelledby="player-title">
+        <div class="cb-hardware-scene" aria-hidden="true">
+          <figure class="cb-mouse-art">
+            <img src="assets/rog-maus-original.png" width="1729" height="784" alt="" fetchpriority="high">
+          </figure>
+          <div class="cb-fx-ambient"><span class="cb-fx-sheen"></span><span class="cb-fx-glints"></span></div>
+        </div>
+        <div class="cb-fx-frame" aria-hidden="true"></div>
+        <div class="cb-player-topline">
+          <div class="cb-player-brandline">
+            <img class="cb-rog-logo" src="assets/rog-logo.svg" width="200" height="37" alt="Republic of Gamers">
+            <h1 id="player-title">Music Player</h1>
+            <p>FEEL THE MUSIC. FEEL THE GAME.</p>
+          </div>
+          <div class="cb-player-tools">
+            <label class="cb-player-search"><span class="cb-icon cb-i-search" aria-hidden="true"></span><input id="trackSearch" type="search" placeholder="Suche nach Titeln, Künstlern …" aria-label="Playlist durchsuchen"></label>
+            <button class="cb-player-tool" id="favoritesFilterButton" type="button" aria-label="Nur Favoriten anzeigen" aria-pressed="false" title="Favoriten filtern"><span class="cb-icon cb-i-heart" aria-hidden="true"></span></button>
+            <button class="cb-player-tool" id="shuffleButton" type="button" aria-label="Zufallswiedergabe einschalten" aria-pressed="false" title="Zufallswiedergabe"><span class="cb-icon cb-i-shuffle" aria-hidden="true"></span></button>
+            <button class="cb-player-tool" id="repeatButton" type="button" aria-label="Wiederholung einschalten" aria-pressed="false" title="Aktuellen Titel wiederholen"><span class="cb-icon cb-i-repeat" aria-hidden="true"></span></button>
+            <button class="cb-player-tool cb-settings-button" id="settingsButton" type="button" aria-label="Musik verwalten und Einstellungen öffnen" aria-controls="playerSettings" aria-expanded="false" title="Musik verwalten und Einstellungen"><span class="cb-icon cb-i-settings" aria-hidden="true"></span></button>
+          </div>
+        </div>
+        <div class="cb-player-content" id="playerContent">
+          <section class="cb-track-panel" aria-label="Playlist">
+            <div class="cb-track-heading"><div><h2 id="selectedPlaylistTitle">Alle Titel</h2><p id="selectedPlaylistSummary">Musik wird geladen …</p></div><button class="cb-player-icon cb-quick-add" id="quickAddButton" type="button" aria-label="Musikdateien hochladen" title="Musikdateien hochladen"><span class="cb-icon cb-i-upload" aria-hidden="true"></span><span>Upload</span></button></div>
+            <ol class="cb-track-list" id="trackList" aria-live="polite"><li class="cb-player-loading" id="playerLoading"><strong>Musikplayer wird geladen …</strong><span>Deine gespeicherten Titel werden vorbereitet.</span></li></ol>
+            <noscript><p class="cb-player-hint">Aktiviere JavaScript im Browser, um Musik hinzuzufügen und abzuspielen.</p></noscript>
+          </section>
+        </div>
+        <div class="cb-volume" aria-label="Lautstärke">
+          <button class="cb-player-icon" id="muteButton" type="button" aria-label="Stummschalten" aria-pressed="false"><span class="cb-icon cb-i-speaker-high" aria-hidden="true"></span></button>
+          <input id="volume" type="range" min="0" max="1" step="0.01" value="0.78" aria-label="Lautstärke">
+          <span id="volumeValue">78%</span>
+        </div>
+        <section class="cb-player-dock" id="playerDock" aria-label="Wiedergabesteuerung">
+          <div class="cb-now-art" aria-hidden="true"><span class="cb-icon cb-i-disc"></span></div>
+          <div class="cb-now-copy"><strong id="nowTitle">Deine Musik beginnt hier</strong><span id="nowArtist">Wähle deinen ersten Titel</span></div>
+          <button class="cb-player-icon cb-now-favorite" id="favoriteButton" type="button" aria-label="Als Favorit markieren" title="Als Favorit markieren" disabled><span class="cb-icon cb-i-heart" aria-hidden="true"></span></button>
+          <div class="cb-transport">
+            <div class="cb-transport-buttons">
+              <button class="cb-player-icon" id="previousButton" type="button" aria-label="Vorheriger Titel" disabled><span class="cb-icon cb-i-previous" aria-hidden="true"></span></button>
+              <button class="cb-play-button" id="playButton" type="button" aria-label="Abspielen" disabled><span class="cb-icon cb-i-play" aria-hidden="true"></span></button>
+              <button class="cb-player-icon" id="nextButton" type="button" aria-label="Nächster Titel" disabled><span class="cb-icon cb-i-next" aria-hidden="true"></span></button>
+            </div>
+            <div class="cb-progress-row"><span id="elapsed">0:00</span><input id="seek" type="range" min="0" max="1000" value="0" aria-label="Wiedergabeposition" disabled><span id="duration">--:--</span><span id="remaining" title="Verbleibende Zeit">−--:--</span></div>
+          </div>
+          <div class="cb-sound-display"><canvas id="visualizer" width="280" height="140" role="img" aria-label="Frequenzanzeige der aktuellen Musik"></canvas></div>
+          <div class="cb-music-signature" aria-hidden="true"><span>Music On</span><small>GOOD VIBES ONLY</small></div>
+
+        </section>
+      </section>
+        <section id="videoStage" class="cb-video-stage" aria-label="Videowiedergabe" hidden><video id="audioPlayer" preload="metadata" crossorigin="anonymous" playsinline controls></video></section>
+        <div class="cb-player-feedback" id="playerFeedback" role="status" aria-live="polite">Mit „Neue Playlist“ stellst du vorhandene Titel zusammen. Neue Musikdateien fügst du über „Upload“ hinzu.</div>
+        <p class="cb-player-feedback"><a class="cb-text-link" href="musik-quellen.html" target="_blank" rel="noopener">Musikquellen, Urheber &amp; Lizenzen <span aria-hidden="true">↗</span></a></p>
+      <details class="cb-player-settings" id="playerSettings">
+        <summary><span class="cb-icon cb-i-settings" aria-hidden="true"></span> Musik verwalten <span class="cb-settings-summary-note">Titel hinzufügen, bearbeiten &amp; Konto</span></summary>
+        <div class="cb-settings-content">
+          <div class="cb-settings-heading"><div><p class="cb-eyebrow">Deine Musik</p><h2>Playlist verwalten</h2></div><div class="cb-settings-actions"><button class="cb-player-tool" id="popoutButton" type="button" aria-label="Playerfenster öffnen" title="Playerfenster öffnen"><span class="cb-icon cb-i-external-window" aria-hidden="true"></span></button><button class="cb-player-tool" id="minimizeButton" type="button" aria-label="Player minimieren" aria-expanded="true" title="Player minimieren"><span class="cb-icon cb-i-minus" aria-hidden="true"></span></button><button class="cb-upload-button" id="addFilesButton" type="button"><span class="cb-icon cb-i-upload" aria-hidden="true"></span> Musik hochladen</button><input id="audioFiles" type="file" accept="audio/mpeg,audio/mp4,video/mp4,.mp3,.mp4" multiple hidden></div></div>
+          <p class="cb-player-hint" id="playerHint">Alle Titel · MP3 und MP4 mit Audio und Video.</p>
+          <div class="cb-effects-setting">
+            <button class="cb-player-tool cb-effects-toggle" id="effectsButton" type="button" aria-pressed="false" aria-describedby="playerEffectsStatus"><span class="cb-icon cb-i-settings" aria-hidden="true"></span><span id="effectsButtonLabel">Effekte: aus</span></button>
+            <p id="playerEffectsStatus">Lichtläufe am Rahmen, Neonleuchten und sanfte Reflexe.</p>
+          </div>
+          <form class="cb-track-meta" id="trackMetaForm">
+            <label>Titel<input id="trackTitle" type="text" maxlength="120" placeholder="Zuerst einen Titel auswählen" disabled></label>
+            <label>Künstler<input id="trackArtist" type="text" maxlength="120" placeholder="Künstlername" disabled></label>
+            <button type="submit" id="saveMetadata" disabled>Änderungen speichern</button>
+          </form>
+          <p class="cb-player-hint">MP3 oder MP4 mit Audiospur · bis 80 MB pro Datei. Für Uploads brauchst du ein bestätigtes Konto, Musikrechte und das Upload-Kennwort. Nach der Einrichtung werden Dateien im Musikspeicher abgelegt.</p>
+          <section class="cb-cloud-settings" aria-label="Konto und gemeinsamer Musikbereich">
+            <div class="cb-cloud-auth"><div><p class="cb-eyebrow">Gemeinsamer Musikbereich</p><strong id="cloudTitle">Konto wird geprüft …</strong><span id="cloudStatus">Die öffentliche Playlist wird geladen.</span></div><a class="cb-account-button secondary" href="registrierung.html">Mein Konto</a><a class="cb-account-button secondary" id="playerAdminLink" href="admin.html" hidden>Admin-Verwaltung</a><button class="cb-account-button secondary" id="cloudRefresh" type="button">Playlist aktualisieren</button></div>
+          </section>
+          <p class="cb-player-footnote">Mit „Playerfenster öffnen“ kannst du beim Seitenwechsel weiterhören. Manche Browser benötigen dort nochmals einen Klick auf Abspielen.</p>
+        </div>
+      </details>
+    </main>
+    <dialog id="playlistDialog" class="cb-playlist-dialog" aria-labelledby="playlistDialogTitle" aria-describedby="playlistDialogHelp">
+      <header class="cb-playlist-dialog-heading"><div><h2 id="playlistDialogTitle">Neue Playlist</h2><p id="playlistDialogHelp">Name eingeben, Titel anklicken, speichern. Deine Playlist ist für alle hörbar.</p></div><button id="playlistClose" type="button" aria-label="Playlist-Fenster schließen">×</button></header>
+      <form id="playlistForm">
+        <div class="cb-playlist-body">
+          <label class="cb-playlist-name" for="playlistName">Name deiner Playlist<input id="playlistName" maxlength="80" required autocomplete="off" placeholder="Zum Beispiel: Mein Gaming-Abend"></label>
+          <div class="cb-playlist-columns">
+            <section class="cb-playlist-library" aria-labelledby="playlistLibraryTitle"><div class="cb-playlist-section-heading"><h3 id="playlistLibraryTitle">1. Titel auswählen</h3><span id="playlistLibraryCount"></span></div><label class="cb-playlist-search" for="playlistSearch">In der Musikbibliothek suchen<input id="playlistSearch" type="search" placeholder="Titel oder Künstler suchen …" autocomplete="off"></label><button id="playlistAddAll" class="cb-playlist-text-button" type="button">Alle angezeigten Titel hinzufügen</button><div id="playlistAvailable" class="cb-playlist-available"></div></section>
+            <section class="cb-playlist-selection" aria-labelledby="playlistSelectionTitle"><div class="cb-playlist-section-heading"><h3 id="playlistSelectionTitle">2. Deine Reihenfolge</h3><span id="playlistDraftCount" aria-live="polite" tabindex="-1"></span></div><p class="cb-playlist-selection-help">Mit den Pfeilen sortieren. Entfernen betrifft nur diese Playlist.</p><ol id="playlistOrder"></ol><p id="playlistEmpty">Hier erscheint deine Auswahl. Wähle die gewünschten Titel in der Bibliothek aus.</p></section>
+          </div>
+        </div>
+        <footer class="cb-playlist-dialog-footer"><div><p id="playlistFeedback" role="status" aria-live="polite"></p><button id="playlistReload" class="cb-playlist-text-button" type="button" hidden>Aktuellen Stand laden – Entwurf verwerfen</button><button id="playlistCheck" class="cb-playlist-text-button" type="button" hidden>Speicherung prüfen</button></div><div class="cb-playlist-footer-actions"><button id="playlistDelete" class="cb-playlist-danger" type="button" hidden>Playlist löschen</button><span class="cb-playlist-footer-spacer"></span><button id="playlistCancel" type="button">Abbrechen</button><button id="playlistSave" class="cb-playlist-primary" type="submit">Playlist erstellen</button></div></footer>
+      </form>
+    </dialog>
+    <dialog id="uploadDialog" class="cb-upload-dialog" aria-labelledby="uploadTitle">
+      <h2 id="uploadTitle">Musik hochladen</h2><p class="cb-account-help">MP3 oder MP4 mit Audiospur · maximal 80 MB pro Datei. Deine Titel werden öffentlich abspielbar.</p>
+      <p id="uploadStatus" class="cb-account-feedback" role="status" aria-live="polite"></p>
+      <p id="uploadAccountLink" hidden><a class="cb-account-button" href="registrierung.html">Anmelden oder Konto erstellen</a></p>
+      <form id="uploadUnlockForm" class="cb-account-form" hidden><label>Upload-Kennwort<input id="uploadPassword" type="password" autocomplete="off" minlength="12" maxlength="128" required></label><button id="uploadUnlockButton" type="submit">Upload freischalten</button></form>
+      <div id="uploadFileChoice" class="cb-account-form" hidden><label>Künstler <span class="cb-account-help">Optional · gilt für diese Auswahl</span><input id="uploadArtist" type="text" maxlength="120" placeholder="Interpret nicht angegeben"></label><button id="chooseUploadFiles" type="button">MP3- oder MP4-Dateien auswählen</button></div>
+      <div class="cb-account-actions"><button id="uploadClose" class="cb-account-button secondary" type="button">Schließen</button></div>
+    </dialog>
+    <header class="cb-header" id="cb-top">
+      <a class="cb-player-home" href="index.html"><span class="cb-icon cb-i-back" aria-hidden="true"></span> Crazy_Batto</a>
+      <nav class="cb-nav" aria-label="Hauptnavigation">
+        <a href="index.html">Start</a>
+        <a href="altes-setup.html">Altes Setup</a>
+        <a href="gaming-setup.html">Gaming-Setup</a>
+        <a href="software.html">Software</a>
+        <a href="discord-app.html">Discord-App</a>
+        <a href="discord-server.html">Discord-Server</a>
+        <a href="media-player.html" aria-current="page">Player</a>
+        <a href="registrierung.html">Mein Konto</a>
+      <a href="schulungen.html">Schulungen</a></nav>
+    </header>
+    <footer class="cb-footer"><span class="cb-footer-brand">Crazy_Batto · Kooperationspartner</span><span class="cb-footer-links"><a href="media-player.html">Musikplayer</a> · <a href="registrierung.html">Mein Konto</a> · <a href="index.html#cb-kontakt">Kontakt</a> · <a href="impressum.html">Impressum</a></span></footer>
+  </div>
+</div>
+<nav class="cb-cookie-footer" aria-label="Datenschutzeinstellungen"><a href="cookies.html">Cookies &amp; Speicher</a><button type="button" data-cookie-settings>Cookie-Einstellungen</button></nav></body>
+</html>

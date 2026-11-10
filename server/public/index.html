@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0e0f12">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Dein Zugang · Crazy_Batto Discord App</title>
+  <link rel="stylesheet" href="/portal/assets/portal.css">
+  <script src="/portal/assets/portal.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#portal-main">Zum Zugang</a>
+  <div class="portal-art" aria-hidden="true"></div>
+  <header class="portal-header"><a class="brand" href="/" aria-label="Crazy_Batto – Zur Webseite"><svg aria-hidden="true"><use href="/portal/assets/icons.svg#shield-clock"></use></svg><span>Crazy_Batto <span class="brand-subtitle">Discord App</span></span></a></header>
+  <div class="portal-shell">
+    <main id="portal-main" class="portal-main" tabindex="-1">
+      <section id="welcome-view" class="portal-view" aria-labelledby="welcome-title">
+        <h1 id="welcome-title">Dein Zugang zur<br><span class="product-name">Crazy_Batto<br>Discord App</span></h1>
+        <p class="intro">Registriere dich mit deinem Discord-Konto. Sobald deine Anfrage persönlich freigegeben wurde, kannst du die Android-App hier herunterladen.</p>
+        <a id="login-link" class="button button-primary" href="/portal/login"><span>Mit Discord registrieren</span><svg aria-hidden="true"><use href="/portal/assets/icons.svg#arrow-right"></use></svg></a>
+        <p class="help">Schon registriert? Melde dich erneut an, um deinen Status zu sehen.</p>
+      </section>
+      <section id="registration-view" class="portal-view" aria-labelledby="registration-title" hidden>
+        <h1 id="registration-title">Deine Registrierung</h1>
+        <p class="intro">Dein Discord-Konto ist bestätigt. Sende jetzt deine Anfrage für den Zugang zur Crazy_Batto Discord App.</p>
+        <div class="account-row"><svg class="icon" aria-hidden="true"><use href="/portal/assets/icons.svg#user"></use></svg><div><strong data-account-name></strong><span data-account-handle></span></div></div>
+        <form id="registration-form">
+          <label for="registration-note">Nachricht an die Verwaltung <span>optional</span></label>
+          <textarea id="registration-note" name="note" rows="3" maxlength="500" placeholder="Zum Beispiel: Für welches Stream-Team möchtest du die App nutzen?" aria-describedby="note-help"></textarea>
+          <p id="note-help" class="field-help">Maximal 500 Zeichen. Dein Discord-Name wird mit deiner Anfrage übermittelt.</p>
+          <button id="register-button" class="button button-primary" type="submit"><span>Zugang anfragen</span><svg aria-hidden="true"><use href="/portal/assets/icons.svg#arrow-right"></use></svg></button>
+        </form>
+        <button class="text-button logout-button" type="button">Abmelden</button>
+      </section>
+      <section id="status-view" class="portal-view" aria-labelledby="status-title" hidden>
+        <h1 id="status-title">Deine Anfrage wird geprüft</h1>
+        <p id="status-copy" class="intro"></p>
+        <div class="account-row"><svg class="icon" aria-hidden="true"><use href="/portal/assets/icons.svg#user"></use></svg><div><strong data-account-name></strong><span data-account-handle></span></div></div>
+        <dl class="status-details"><div><dt>Zugang</dt><dd id="access-label"></dd></div><div id="requested-row"><dt>Angefragt am</dt><dd id="requested-at"></dd></div><div id="reviewed-row" hidden><dt>Entschieden am</dt><dd id="reviewed-at"></dd></div></dl>
+        <div id="review-note" class="review-note" hidden><h2>Nachricht der Verwaltung</h2><p id="review-reason"></p></div>
+        <section id="download-section" class="download-section" aria-labelledby="download-title" hidden><h2 id="download-title">Crazy_Batto Discord App für Android</h2><p id="download-meta" class="field-help"></p><a id="download-link" class="button button-primary" href="/portal/download"><span>Android-App herunterladen</span><svg aria-hidden="true"><use href="/portal/assets/icons.svg#download"></use></svg></a><p class="field-help">Die App nutzt dasselbe freigegebene Discord-Konto.</p><label for="server-address">Serveradresse für die App</label><div class="server-copy"><input id="server-address" type="url" readonly aria-describedby="server-copy-help"><button id="copy-server" type="button" aria-label="Serveradresse kopieren"><svg class="icon" aria-hidden="true"><use href="/portal/assets/icons.svg#clipboard"></use></svg></button></div><p id="server-copy-help" class="field-help">In der App unter Einstellungen → App-Verbindung einfügen.</p></section>
+        <p id="download-unavailable" class="review-note" hidden>Dein Zugang ist freigegeben. Die Android-App wird auf diesem Server noch bereitgestellt.</p>
+        <button id="refresh-button" class="button button-primary" type="button"><span>Status prüfen</span><svg aria-hidden="true"><use href="/portal/assets/icons.svg#refresh"></use></svg></button>
+        <button class="text-button logout-button" type="button">Abmelden</button>
+      </section>
+      <div id="portal-error" class="error-message" role="alert" hidden></div>
+      <p id="portal-status" class="live-status" role="status" aria-live="polite">Verbindung wird geprüft …</p>
+      <button id="retry-button" class="button button-secondary" type="button" hidden>Erneut prüfen</button>
+      <noscript><p class="error-message">Aktiviere JavaScript, um deine Registrierung und den Freigabestatus zu sehen.</p></noscript>
+    </main>
+    <footer class="portal-footer"><a class="footer-button" href="/">Zur Webseite</a><span aria-hidden="true">|</span><button id="privacy-open" class="footer-button" type="button">Datenschutz</button><span aria-hidden="true">|</span><button id="admin-open" class="footer-button" type="button">Anmeldung für die Verwaltung</button></footer>
+  </div>
+  <dialog id="privacy-dialog" class="info-dialog" aria-labelledby="privacy-title"><div class="dialog-heading"><h2 id="privacy-title">Hinweise zur Datenverarbeitung</h2><button class="dialog-close" type="button" aria-label="Datenschutzhinweise schließen"><svg class="icon" aria-hidden="true"><use href="/portal/assets/icons.svg#close"></use></svg></button></div><p>Crazy_Batto Discord App verwendet dein Discord-Konto zur Anmeldung. Gespeichert werden deine Discord-ID, dein Benutzer- und Anzeigename, deine freiwillige Nachricht sowie die Anfrage, die Freigabeentscheidung und deren Zeitpunkte.</p><p>Die Verwaltung dieser App-Instanz sieht deine Anfrage und entscheidet über deinen Zugang. Für Auskunft oder Löschung wende dich an die Person, die diese Instanz betreibt und dir ihre Adresse gegeben hat.</p><p>Ein notwendiges Sitzungscookie hält dich im Portal angemeldet. Discord-Anmeldedaten werden serverseitig geschützt gespeichert. Die Website enthält keine Analyse- oder Werbedienste. Bei der Anmeldung gelten zusätzlich die Datenschutzinformationen von Discord.</p><p>Wenn du die App verwendest, verarbeitet dieser Server außerdem deine Aufträge, ausgewählten Discord-Ziele und hochgeladenen Bilder zur Übermittlung an Discord. Die App speichert deinen Verlauf auf deinem Gerät.</p><button class="button button-secondary dialog-close" type="button">Schließen</button></dialog>
+  <dialog id="admin-dialog" class="info-dialog" aria-labelledby="admin-title"><div class="dialog-heading"><h2 id="admin-title">Verwaltung am PC</h2><button class="dialog-close" type="button" aria-label="Information zur Verwaltung schließen"><svg class="icon" aria-hidden="true"><use href="/portal/assets/icons.svg#close"></use></svg></button></div><p>Neue Anfragen werden in der PC-Verwaltung der Crazy_Batto Discord App für Windows angezeigt. Dort meldest du dich mit deinem Betreiberkonto an und kannst Zugänge freigeben, ablehnen oder sperren.</p><p>Die PC-App muss laufen und mit diesem Server verbunden sein, damit sie neue Anfragen melden kann.</p><button class="button button-secondary dialog-close" type="button">Schließen</button></dialog>
+</body>
+</html>

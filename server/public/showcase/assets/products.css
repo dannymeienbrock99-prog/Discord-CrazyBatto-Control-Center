@@ -1,0 +1,91 @@
+#cb-website .cb-product-home .cb-feature { position: relative; overflow: hidden; min-height: 240px; }
+#cb-website .cb-product-home .cb-feature-kicker { margin-bottom: 5px; }
+#cb-website .cb-product-home .cb-product-rgb { background: linear-gradient(128deg,#211b2b,#151820 64%,#132326); }
+#cb-website .cb-product-home .cb-product-rgb::before { content: ""; position: absolute; width: 130px; height: 3px; top: 0; left: 27px; background: linear-gradient(90deg,#be8adb,#83aefa,#8fd9c4); }
+#cb-website .cb-product-myasus { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 19px 22px; margin-top: 20px; border: 1px solid var(--cb-line); border-radius: 9px; text-decoration: none; background: #121417; }
+#cb-website .cb-product-myasus strong { display: block; color: var(--cb-gold); font-size: 17px; }
+#cb-website .cb-product-myasus small { display: block; color: var(--cb-muted); line-height: 1.6; margin-top: 4px; }
+#cb-website .cb-product-myasus > span:last-child { font-size: 23px; color: var(--cb-gold); }
+#cb-website .cb-product-myasus:hover { border-color: var(--cb-gold); }
+#cb-website .cb-product-picture-link { position: relative; isolation: isolate; overflow: hidden; min-height: 300px; background: #101217; }
+#cb-website .cb-product-home .cb-product-picture-link { min-height: 300px; }
+#cb-website .cb-product-picture-link .cb-product-link-picture { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center; transition: transform .3s ease; }
+#cb-website .cb-product-picture-link::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg,rgba(5,8,13,.9),rgba(5,8,13,.5) 78%),linear-gradient(0deg,rgba(5,8,13,.6),transparent 65%); pointer-events: none; }
+#cb-website .cb-product-picture-link h3 { color: #fff9ea; text-shadow: 0 2px 12px #0009; }
+#cb-website .cb-product-picture-link p { color: #e2e0da; max-width: 36ch; text-shadow: 0 1px 6px #000b; }
+#cb-website .cb-product-picture-link .cb-feature-kicker, #cb-website .cb-product-picture-link .cb-feature-cta { color: #ffe1a0; }
+#cb-website .cb-product-asus-card { position: relative; isolation: isolate; overflow: hidden; background: #101217; }
+#cb-website .cb-product-home .cb-product-asus-card { min-height: 300px; }
+#cb-website .cb-product-asus-card .cb-product-brand-image { position: absolute; inset: 0; z-index: -2; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; pointer-events: none; }
+#cb-website .cb-product-asus-card::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg,rgba(5,8,13,.84),rgba(5,8,13,.32) 85%),linear-gradient(0deg,rgba(5,8,13,.55),transparent 65%); pointer-events: none; }
+#cb-website .cb-product-asus-card h3 { color: #fff9ea; text-shadow: 0 2px 12px #0009; }
+#cb-website .cb-product-asus-card p { color: #e2e0da; max-width: 36ch; text-shadow: 0 1px 6px #000b; }
+#cb-website .cb-product-asus-card .cb-feature-kicker, #cb-website .cb-product-asus-card .cb-feature-cta { color: #ffe1a0; }
+#cb-website .cb-product-picture-link, #cb-website .cb-product-asus-card { transition: border-color .2s ease,box-shadow .2s ease; }
+#cb-website .cb-product-picture-link:focus-visible, #cb-website .cb-product-asus-card:focus-visible { outline: 3px solid var(--cb-gold); outline-offset: 4px; border-color: #f0d494; }
+#cb-website .cb-products-intro > p:not(.cb-eyebrow) { max-width: 76ch; font-size: 16px; }
+#cb-website .cb-products .cb-display { font-size: clamp(32px,5vw,53px); }
+#cb-website .cb-products-heading { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+#cb-website [data-products-count], #cb-website #productsAdminCount { color: var(--cb-muted); font-size: 13px; }
+#cb-website .cb-products-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; }
+#cb-website .cb-product-card { min-width: 0; display: flex; flex-direction: column; border: 1px solid #4f4430; border-radius: 13px; overflow: hidden; background: linear-gradient(145deg,#1c1d20,#101215); }
+#cb-website .cb-product-image { display: grid; place-items: center; aspect-ratio: 4/3; background: #f7f7f7; padding: 24px; border-bottom: 1px solid var(--cb-line); overflow: hidden; }
+#cb-website .cb-product-image img { width: 100%; height: 100%; min-height: 0; object-fit: contain; display: block; }
+#cb-website .cb-product-image[data-empty="true"] { background: radial-gradient(ellipse at center,#29251c,#131519); }
+#cb-website .cb-product-image-placeholder { color: #d9b770; text-align: center; font-size: 15px; }
+#cb-website .cb-product-copy { display: flex; flex-direction: column; flex: 1; gap: 16px; padding: 25px; }
+#cb-website .cb-product-copy h3 { font-size: 22px; overflow-wrap: anywhere; }
+#cb-website .cb-product-copy p { font-size: 14px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+#cb-website .cb-product-copy .cb-button { margin-top: auto; width: 100%; }
+#cb-website .cb-product-host { font-size: 12px; color: var(--cb-muted); overflow-wrap: anywhere; }
+#cb-website .cb-products-feedback { min-height: 1.6em; margin-bottom: 16px; }
+#cb-website .cb-products-feedback.is-error, #cb-website .cb-products-admin .is-error { color: #ffb2a7; }
+#cb-website .cb-products-footnote { margin-top: 24px; color: var(--cb-muted); font-size: 13px; }
+#cb-website .cb-products-empty { padding: 32px; border: 1px dashed #625338; border-radius: 10px; color: var(--cb-muted); }
+#cb-website .cb-products-empty h3 { margin-bottom: 10px; }
+#cb-website .cb-products-admin .cb-account-heading h1 { margin: 12px 0; }
+#cb-website .cb-products-admin .cb-account-heading { margin-bottom: 24px; }
+#cb-website .cb-products-admin #productsEditor { gap: 0; }
+#cb-website .cb-products-savebar { position: sticky; top: 10px; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px; margin-bottom: 24px; border: 1px solid #806332; border-radius: 12px; background: #17191cf5; box-shadow: 0 8px 24px #0006; }
+#cb-website .cb-products-savebar p { max-width: 63ch; font-size: 13px; }
+#cb-website .cb-products-savebar button { flex-shrink: 0; }
+#cb-website .cb-product-editor { display: grid; grid-template-columns: 180px minmax(0,1fr); gap: 24px; }
+#cb-website .cb-product-editor-heading { grid-column: 1/-1; display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+#cb-website .cb-product-editor-heading h3 { overflow-wrap: anywhere; }
+#cb-website .cb-product-editor-state { color: var(--cb-gold); font-size: 13px; white-space: nowrap; }
+#cb-website .cb-product-editor-picture { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+#cb-website .cb-product-editor-picture .cb-product-image { aspect-ratio: 1; padding: 12px; border: 1px solid #4f4430; border-radius: 9px; }
+#cb-website .cb-product-editor-picture button { width: 100%; padding: 9px; font-size: 13px; }
+#cb-website .cb-product-editor-fields { display: grid; gap: 17px; min-width: 0; }
+#cb-website .cb-product-editor-fields .cb-admin-toggle { display: flex; flex-wrap: wrap; gap: 10px; white-space: normal; }
+#cb-website .cb-product-editor-fields .cb-admin-toggle input { width: 20px; height: 20px; min-height: 20px; padding: 0; flex: 0 0 20px; accent-color: var(--cb-gold); }
+#cb-website .cb-product-editor-fields .cb-account-actions { margin-top: 0; }
+#cb-website .cb-product-editor-fields .cb-account-actions button { min-height: 42px; padding: 9px 13px; font-size: 13px; }
+#cb-website .cb-product-upload-status { font-size: 13px; overflow-wrap: anywhere; }
+#cb-website .cb-products-link-editor { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; margin-top: 20px; }
+#cb-website .cb-products-link-editor fieldset { display: grid; gap: 17px; min-width: 0; padding: 18px; border: 1px solid #4f4430; border-radius: 9px; }
+#cb-website .cb-products-link-editor legend { padding: 0 7px; color: var(--cb-gold); font-weight: 600; }
+#cb-website .cb-products-admin .cb-account-card h2 { margin-bottom: 12px; }
+#cb-website .cb-products-admin #productsEntries .cb-account-card:last-child { margin-bottom: 24px; }
+@media(max-width:720px) {
+  #cb-website .cb-products-grid, #cb-website .cb-products-link-editor { grid-template-columns: minmax(0,1fr); }
+  #cb-website .cb-products-savebar { flex-direction: column; align-items: stretch; position: static; }
+  #cb-website .cb-product-editor { grid-template-columns: 130px minmax(0,1fr); gap: 18px; }
+  #cb-website .cb-product-home .cb-feature { min-height: 220px; }
+}
+@media(max-width:500px) {
+  #cb-website .cb-product-editor { grid-template-columns: minmax(0,1fr); }
+  #cb-website .cb-product-editor-picture { display: grid; grid-template-columns: 130px minmax(0,1fr); align-items: start; }
+  #cb-website .cb-product-editor-picture .cb-product-image { grid-row: span 3; }
+  #cb-website .cb-product-editor-picture .cb-product-upload-status { grid-column: 1/-1; }
+  #cb-website .cb-product-editor-heading { flex-direction: column; gap: 5px; }
+  #cb-website .cb-product-copy { padding: 20px; }
+  #cb-website .cb-product-myasus { padding: 17px; }
+}
+@media(hover:hover) and (prefers-reduced-motion:no-preference) {
+  #cb-website .cb-product-picture-link:hover .cb-product-link-picture { transform: scale(1.025); }
+  #cb-website .cb-product-picture-link:hover, #cb-website .cb-product-asus-card:hover { border-color: var(--cb-gold); box-shadow: 0 8px 24px #0005; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #cb-website .cb-product-picture-link, #cb-website .cb-product-asus-card, #cb-website .cb-product-picture-link .cb-product-link-picture { transition: none; }
+}

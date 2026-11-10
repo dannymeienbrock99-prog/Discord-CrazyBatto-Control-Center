@@ -1,0 +1,27 @@
+<resources>
+    <style name="Theme.RobotSchichtLog" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#121417</item>
+        <item name="android:navigationBarColor">#121417</item>
+        <item name="android:colorAccent">#FF8E32</item>
+        <item name="android:windowBackground">#121417</item>
+    </style>
+    <style name="Theme.RobotSchichtLog.Cad" parent="Theme.RobotSchichtLog">
+        <item name="android:colorAccent">#40D9CE</item>
+        <item name="android:windowBackground">#081A21</item>
+        <item name="android:statusBarColor">#081A21</item>
+        <item name="android:navigationBarColor">#081A21</item>
+    </style>
+    <style name="Theme.RobotSchichtLog.Werkstatt" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:colorAccent">#1747D5</item>
+        <item name="android:windowBackground">#F7F6F2</item>
+        <item name="android:statusBarColor">#F7F6F2</item>
+        <item name="android:navigationBarColor">#F7F6F2</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

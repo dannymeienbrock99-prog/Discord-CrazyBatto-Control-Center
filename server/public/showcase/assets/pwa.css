@@ -1,0 +1,20 @@
+.cb-install-dialog { box-sizing:border-box; width:min(540px,calc(100% - 28px)); max-height:calc(100dvh - 36px); padding:24px; border:1px solid #aa8a50; border-radius:18px; background:#13151a; color:#f8ecd0; font:16px/1.6 system-ui,sans-serif; overflow:auto; }
+.cb-install-dialog::backdrop { background:#000b; }
+.cb-install-dialog h2 { font-size:25px; line-height:1.2; margin:0 0 18px; }
+.cb-install-dialog p { color:#d0c8ba; }
+.cb-install-dialog a { color:#f1d18c; }
+.cb-install-dialog button { font:inherit; font-weight:650; min-height:46px; padding:10px 16px; color:#17130d; background:#e3bf78; border:0; border-radius:8px; cursor:pointer; }
+.cb-install-dialog button:focus-visible { outline:3px solid #fff; outline-offset:3px; }
+.cb-install-dialog li { margin:12px 0; }
+.cb-install-dialog ol { padding-left:24px; }
+.cb-install-dialog [hidden] { display:none !important; }
+.cb-install-dialog label { display:block; font-weight:650; margin-top:18px; }
+.cb-install-dialog input { box-sizing:border-box; width:100%; min-height:46px; margin:8px 0 12px; padding:10px; border:1px solid #8c7957; border-radius:8px; background:#090b0f; color:#f8ecd0; font:inherit; }
+.cb-install-dialog input:focus-visible { outline:3px solid #e3bf78; outline-offset:2px; }
+.cb-chat-install { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin:18px 0; padding:16px; border:1px solid #8c7957; border-radius:12px; background:#151619; scroll-margin-top:20px; }
+.cb-chat-install h2 { margin:0 0 5px; font-size:18px; }
+.cb-chat-install p { margin:0; color:#d0c8ba; }
+.cb-chat-install-actions { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.cb-install-dialog .cb-chat-apk-download { display:inline-flex; box-sizing:border-box; align-items:center; min-height:46px; padding:10px 16px; color:#17130d; background:#e3bf78; border-radius:8px; text-decoration:none; font-weight:650; }
+.cb-install-dialog .cb-chat-apk-download:focus-visible { outline:3px solid #fff; outline-offset:3px; }
+@media (display-mode:standalone) { body { padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); } }

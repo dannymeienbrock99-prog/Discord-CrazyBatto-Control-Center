@@ -1,0 +1,50 @@
+#cb-website .cb-music-skip { position: absolute; left: 24px; top: -100px; z-index: 10; padding: 12px 18px; background: var(--cb-gold); color: #161510; border-radius: 6px; }
+#cb-website .cb-music-skip:focus { top: 12px; }
+#cb-website .cb-music-intro { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,.8fr); align-items: center; gap: 38px; }
+#cb-website .cb-music-intro .cb-display { font-size: clamp(36px,5.3vw,58px); }
+#cb-website .cb-music-overview { padding: 28px; border: 1px solid #806332; border-radius: 12px; background: linear-gradient(145deg,rgba(40,34,24,.9),rgba(17,18,21,.96)); }
+#cb-website .cb-music-overview .cb-eyebrow { margin-top: 0; }
+#cb-website .cb-music-overview h2 { margin-bottom: 24px; }
+#cb-website .cb-music-short-steps { padding: 0; margin: 0; list-style: none; }
+#cb-website .cb-music-short-steps li { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 13px; padding: 15px 0; border-top: 1px solid #51452f; }
+#cb-website .cb-music-short-steps li > span { color: var(--cb-gold); font-size: 12px; font-variant-numeric: tabular-nums; padding-top: 2px; }
+#cb-website .cb-music-short-steps strong { font-size: 14px; }
+#cb-website .cb-music-short-steps p { margin-top: 4px; font-size: 12px; line-height: 1.7; }
+#cb-website .cb-music-overview-note { margin-top: 15px; padding-top: 18px; border-top: 1px solid #51452f; font-size: 12px; }
+#cb-website .cb-music-download-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 34px; align-items: start; }
+#cb-website .cb-music-browser-note { margin-top: 9px; padding-top: 24px; border-top: 1px solid var(--cb-line); }
+#cb-website .cb-music-browser-note h3 { margin-bottom: 10px; }
+#cb-website .cb-music-browser-note .cb-text-link { display: inline-flex; gap: 10px; margin-top: 14px; }
+#cb-website .cb-music-download-card h3 { margin-bottom: 12px; font-size: 23px; }
+#cb-website .cb-music-download-card p:not(.cb-eyebrow) { font-size: 13px; line-height: 1.8; }
+#cb-website .cb-music-download-card .cb-access-badge { margin-top: 18px; }
+#cb-website .cb-music-download-card[data-state="approved"] .cb-access-badge { color: #d7e9cd; border-color: #687e55; background: #232c1c; }
+#cb-website .cb-music-download-card:is([data-state="rejected"],[data-state="revoked"],[data-state="suspended"],[data-state="error"]) .cb-access-badge { color: #f0c9bc; border-color: #855349; background: #30201e; }
+#cb-website .cb-music-download-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; margin-top: 24px; }
+#cb-website .cb-music-download-actions .cb-portal-text-button { align-self: start; }
+#cb-website .cb-music-download-actions button:disabled { cursor: wait; }
+#cb-website .cb-music-release { margin-top: 20px; padding: 11px 0; border-top: 1px solid var(--cb-line); border-bottom: 1px solid var(--cb-line); color: var(--cb-gold); }
+#cb-website .cb-music-noscript { padding-top: 16px; border-top: 1px solid var(--cb-line); }
+#cb-website .cb-music-setup-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 34px; }
+#cb-website .cb-music-setup-steps li { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 15px; padding: 25px 0; border-top: 1px solid #625030; }
+#cb-website .cb-music-step-number { color: var(--cb-gold); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; padding-top: 2px; }
+#cb-website .cb-music-setup-steps h3 { margin-bottom: 12px; font-size: 19px; }
+#cb-website .cb-music-setup-steps p { font-size: 13px; line-height: 1.85; }
+#cb-website .cb-music-setup-steps p + p { margin-top: 12px; }
+#cb-website .cb-music-setup-steps a, #cb-website .cb-music-faq a, #cb-website .cb-music-noscript a { color: var(--cb-gold); text-underline-offset: 4px; }
+#cb-website .cb-music-faq { margin-top: 0; }
+#cb-website .cb-music-faq summary { min-height: 52px; }
+@media (max-width: 800px) {
+  #cb-website .cb-music-intro { grid-template-columns: minmax(0,1fr); gap: 28px; }
+  #cb-website .cb-music-overview { padding: 24px; }
+  #cb-website .cb-music-overview h2 br { display: none; }
+  #cb-website .cb-music-download-grid { grid-template-columns: minmax(0,1fr); gap: 28px; }
+  #cb-website .cb-music-setup-steps { gap: 0 24px; }
+}
+@media (max-width: 580px) {
+  #cb-website .cb-music-intro .cb-display { font-size: clamp(34px,9.3vw,47px); }
+  #cb-website .cb-music-overview { padding: 21px; }
+  #cb-website .cb-music-setup-steps { grid-template-columns: minmax(0,1fr); }
+  #cb-website .cb-music-setup-steps li { gap: 10px; grid-template-columns: 28px minmax(0,1fr); }
+  #cb-website .cb-music-download-actions .cb-button { justify-content: center; text-align: center; }
+}

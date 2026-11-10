@@ -1,0 +1,28 @@
+#cb-website .cb-training-courses { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; }
+#cb-website .cb-training h1 { margin:12px 0; }
+#cb-website .cb-training h2 { margin:0 0 14px; }
+#cb-website .cb-training h3 { margin:0 0 8px; }
+#cb-website .cb-training p { margin:10px 0; }
+#cb-website .cb-training-courses .cb-eyebrow { display:block; margin-bottom:12px; }
+#cb-website .cb-training-note { padding:14px 16px; border-left:3px solid #d2ad64; border-radius:0 8px 8px 0; background:#d2ad6414; font-size:14px; }
+#cb-website .cb-training-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+#cb-website .cb-training-field { display:grid; align-content:start; gap:8px; min-width:0; }
+#cb-website .cb-training-field label { color:#e5e1d7; font-size:16px; }
+#cb-website .cb-training-filters { grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr); margin:24px 0; }
+#cb-website .cb-training-registration { border-top:1px solid #514530; padding:22px 0; overflow-wrap:anywhere; }
+#cb-website .cb-training-registration:first-child { border-top:0; }
+#cb-website .cb-training-registration-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; }
+#cb-website .cb-training-details { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:18px 0; }
+#cb-website .cb-training-details > div { min-width:0; }
+#cb-website .cb-training-details dt { color:#aca494; font-size:13px; }
+#cb-website .cb-training-details dd { margin:3px 0 0; color:#eee7da; overflow-wrap:anywhere; }
+#cb-website .cb-training .cb-account-badge[data-state="accepted"] { border-color:#4c886b; color:#a3e1bd; }
+#cb-website .cb-training-status-form { grid-template-columns:minmax(0,1fr) auto; align-items:end; max-width:620px; }
+#cb-website .cb-training-status-form .cb-account-feedback { grid-column:1/-1; }
+#cb-website .cb-training #trainingSubmit { justify-self:start; }
+@media(max-width:740px) {
+  #cb-website .cb-training-courses, #cb-website .cb-training-fields, #cb-website .cb-training-filters, #cb-website .cb-training-status-form { grid-template-columns:minmax(0,1fr); }
+  #cb-website .cb-training-courses { gap:0; }
+  #cb-website .cb-training #trainingSubmit { justify-self:stretch; }
+}
+@media(max-width:420px) { #cb-website .cb-training-details { grid-template-columns:minmax(0,1fr); } }

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c0d10">
+  <meta name="description" content="Eure Gaming-PCs, Konsolen und Schreibtische. Entdecke die Setups der Crazy_Batto Community und teile dein eigenes auf der Website und in Discord.">
+  <title>Eure Gaming Setups – Crazy_Batto</title>
+  <link rel="icon" href="assets/logo.jpeg" type="image/jpeg">
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/gaming-setups.css">
+  <link rel="stylesheet" href="assets/cookie-consent.css">
+  <script src="assets/site.js" defer></script>
+  <script src="assets/cookie-consent.js" defer></script>
+  <script type="module" src="assets/gaming-setups.js"></script>
+</head>
+<body>
+<div id="cb-website" class="cb-site cb-community-setups" data-preview="false">
+  <div class="cb-shell">
+    <header class="cb-header" id="cb-top"><div class="cb-header-row">
+      <a class="cb-brand" href="index.html" aria-label="Crazy_Batto – zur Startseite"><img src="assets/logo.jpeg" width="1122" height="1402" alt="Crazy_Batto-Drachenlogo"><span>Crazy_Batto<small>DEINE COMMUNITY. DEIN ZUHAUSE.</small></span></a>
+      <nav class="cb-nav" aria-label="Hauptnavigation"><a href="index.html">Start</a><a href="gaming-setup.html">Battos Gaming-Setup</a><a href="eure-gaming-setups.html" aria-current="page">Eure Gaming Setups</a><a href="geburtstage.html">Geburtstage</a><a href="discord-server.html">Discord</a><a class="cb-nav-access" href="registrierung.html">Mein Konto</a></nav>
+    </div></header>
+    <main>
+      <section class="cb-section gs-hero" aria-labelledby="gs-title">
+        <div><p class="cb-eyebrow">TEAM ALPHA · COMMUNITY</p><h1 class="cb-display" id="gs-title">Eure Gaming<br>Setups<span class="cb-title-dot">.</span></h1><p class="cb-lead">Der PC, auf den du stolz bist. Der Platz für deine nächste Runde. Zeig uns, wo du zu Hause spielst.</p><div class="cb-actions"><a class="cb-button cb-button-gold" href="#mein-setup">Mein Setup vorstellen <span aria-hidden="true">↗</span></a><a class="cb-text-link" href="#setup-galerie">Community entdecken ↓</a></div></div>
+        <aside class="gs-intro-card"><span class="gs-display-icon" aria-hidden="true">⌘</span><p class="cb-eyebrow">DEIN PLATZ IN DER GALERIE</p><h2>Ein Setup.<br>Dein Name.<br>Unsere Community.</h2><p>Nach der Freigabe erscheinen Fotos und Ausstattung unter deinem Website-Namen. In Discord stellt Crazy_Batto dein Setup als Bot-Beitrag vor.</p><ol><li>Registrieren, E-Mail bestätigen und Mitgliederfreigabe abwarten</li><li>Bilder und Ausstattung ergänzen</li><li>Setup einreichen – das Team prüft die Veröffentlichung</li></ol></aside>
+      </section>
+      <section class="cb-section gs-gallery-section" id="setup-galerie" aria-labelledby="gs-gallery-title">
+        <div class="gs-section-top"><div><p class="cb-eyebrow">VON EUCH. FÜR EUCH.</p><h2 id="gs-gallery-title">Die Community-Galerie</h2></div><button class="cb-button" id="gs-refresh-gallery" type="button">Galerie aktualisieren</button></div>
+        <div class="gs-gallery-tools"><label for="gs-search">Nach Name, Setup oder Ausstattung suchen</label><input id="gs-search" type="search" placeholder="Zum Beispiel: Wasserkühlung oder PlayStation" maxlength="100"><span id="gs-gallery-count" class="gs-small"></span></div>
+        <p id="gs-gallery-status" class="gs-status" role="status" aria-live="polite">Die Setups werden geladen …</p>
+        <div id="gs-gallery" class="gs-gallery"></div>
+      </section>
+      <section class="cb-section gs-editor-section" id="mein-setup" aria-labelledby="gs-editor-title">
+        <div class="gs-section-top"><div><p class="cb-eyebrow">DEIN GAMING-ZUHAUSE</p><h2 id="gs-editor-title">Mein Setup vorstellen</h2></div><button class="cb-button" id="gs-refresh-own" type="button">Gespeicherten Stand laden</button></div>
+        <p id="gs-account-status" class="gs-status" role="status" aria-live="polite">Deine Anmeldung wird geprüft …</p>
+        <div id="gs-signin" class="gs-signin" hidden><h3>Dein Konto verbindet alles</h3><p>Melde dich mit deinem bestätigten und freigegebenen Crazy_Batto-Konto an. Die Registrierung allein veröffentlicht nichts. Du entscheidest später, welche Bilder und Angaben du teilen möchtest.</p><a class="cb-button cb-button-gold" href="registrierung.html">Anmelden oder registrieren ↗</a></div>
+        <form id="gs-form" class="gs-form" hidden>
+          <fieldset id="gs-edit-fields" class="gs-edit-fields">
+            <div class="gs-author-bar"><div><span class="gs-small">Wird veröffentlicht unter</span><strong id="gs-author"></strong></div><span class="gs-badge" id="gs-publication-state">Noch kein Beitrag</span></div>
+            <p id="gs-policy" class="gs-note"></p>
+            <label>Dein Setup-Titel<input name="title" id="gs-setup-title" type="text" minlength="2" maxlength="100" required placeholder="Zum Beispiel: Mein weißer Gaming-PC"></label>
+            <label>Was macht dein Setup besonders?<textarea name="description" id="gs-description" rows="4" maxlength="2000" placeholder="Erzähl uns von deinem PC, deiner Konsole, deinem Schreibtisch oder deinem nächsten Upgrade."></textarea><span class="gs-small">Optional · bis 2.000 Zeichen</span></label>
+            <fieldset class="gs-specs"><legend>Deine Ausstattung <span class="gs-small">Alles freiwillig</span></legend><div class="gs-spec-inputs">
+              <label>Prozessor<input name="cpu" maxlength="160" placeholder="z. B. AMD Ryzen 7"></label><label>Grafikkarte<input name="gpu" maxlength="160" placeholder="z. B. GeForce RTX"></label><label>Arbeitsspeicher<input name="ram" maxlength="160" placeholder="z. B. 32 GB DDR5"></label><label>Speicher / SSD<input name="storage" maxlength="160" placeholder="z. B. 2 TB NVMe"></label><label>Mainboard<input name="mainboard" maxlength="160"></label><label>Kühlung<input name="cooling" maxlength="160" placeholder="z. B. Wasserkühlung"></label><label>Gehäuse<input name="case" maxlength="160"></label><label>Monitor / Fernseher<input name="monitor" maxlength="160"></label><label class="gs-wide">Geräte &amp; Zubehör<input name="peripherals" maxlength="160" placeholder="Konsole, Tastatur, Maus, Headset, Tisch …"></label>
+            </div></fieldset>
+            <fieldset class="gs-photos"><legend>Deine Setup-Fotos</legend><p id="gs-photo-help" class="gs-small">Bis zu 4 Bilder für deinen Beitrag · JPG, PNG oder WebP · jeweils höchstens 8 MiB.</p><label class="gs-upload-label" for="gs-files"><span aria-hidden="true">＋</span> Fotos hochladen<input id="gs-files" type="file" accept="image/jpeg,image/png,image/webp" multiple></label><p id="gs-upload-status" class="gs-status" role="status" aria-live="polite"></p><div id="gs-images" class="gs-images"></div><p id="gs-photo-count" class="gs-small"></p><p class="gs-small">Häkchen wählen die Bilder für den Beitrag. Das erste ausgewählte Bild wird zum Titelbild. Ein Upload allein veröffentlicht das Bild noch nicht.</p></fieldset>
+            <div class="gs-publication-note"><h3>Du entscheidest, wann es öffentlich wird</h3><p>„Entwurf speichern“ bewahrt deine Angaben privat auf. Ein bereits veröffentlichter Beitrag bleibt dabei unverändert. Reiche deine ausgewählten Angaben und Bilder zur Freigabe ein. Erst nach der Prüfung durch das Team werden sie auf dieser Website und im Discord-Setup-Bereich geteilt.</p><label class="gs-consent"><input id="gs-consent" type="checkbox"><span>Ich möchte diese Angaben und Bilder unter meinem Website-Namen öffentlich auf der Website und in Discord teilen. Ich darf die ausgewählten Bilder veröffentlichen.</span></label></div>
+            <div class="gs-save-actions"><button class="cb-button" type="submit" value="draft" id="gs-save-draft">Entwurf speichern</button><button class="cb-button cb-button-gold" type="submit" value="publish" id="gs-publish">Auf Website &amp; Discord veröffentlichen</button></div>
+          </fieldset>
+          <p id="gs-save-status" class="gs-status" role="status" aria-live="polite"></p>
+          <div id="gs-discord-status" class="gs-discord-status" hidden></div>
+          <div class="gs-withdraw-row" id="gs-withdraw-row" hidden><p>Deinen öffentlichen Beitrag kannst du wieder zurückziehen. Dein Entwurf bleibt erhalten.</p><button class="cb-button" type="button" id="gs-withdraw">Veröffentlichung zurückziehen</button></div>
+        </form>
+      </section>
+      <noscript><p class="cb-section">Bitte aktiviere JavaScript, um die Community-Galerie anzuzeigen und dein Setup zu bearbeiten.</p></noscript>
+    </main>
+    <footer class="cb-footer"><span class="cb-footer-brand">Crazy_Batto · Team Alpha</span><span class="cb-footer-links"><a href="registrierung.html">Mein Konto</a> · <a href="index.html#cb-kontakt">Kontakt</a> · <a href="impressum.html">Impressum</a></span></footer>
+  </div>
+</div>
+<dialog id="gs-detail" class="gs-dialog" aria-labelledby="gs-detail-title"><div class="gs-dialog-top"><span class="gs-eyebrow">EURE GAMING SETUPS</span><button class="gs-dialog-close" type="button" id="gs-close-detail" aria-label="Setup-Ansicht schließen">×</button></div><div id="gs-detail-content"></div></dialog>
+<dialog id="gs-confirm" class="gs-dialog gs-confirm" aria-labelledby="gs-confirm-title"><h2 id="gs-confirm-title">Veröffentlichung zurückziehen?</h2><p>Dein Setup wird aus der öffentlichen Website-Galerie genommen. Der zugehörige Bot-Beitrag in Discord wird zurückgezogen. Dein gespeicherter Entwurf bleibt erhalten.</p><div class="gs-confirm-actions"><button type="button" id="gs-cancel-withdraw">Abbrechen</button><button type="button" id="gs-confirm-withdraw">Jetzt zurückziehen</button></div></dialog>
+<nav class="cb-cookie-footer" aria-label="Datenschutzeinstellungen"><a href="cookies.html">Cookies &amp; Speicher</a><button type="button" data-cookie-settings>Cookie-Einstellungen</button></nav>
+</body>
+</html>

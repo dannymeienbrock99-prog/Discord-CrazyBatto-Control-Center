@@ -1,0 +1,28 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'de.crazybatto.robotschichtlog'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'de.crazybatto.robotschichtlog.work'
+        minSdk 26
+        targetSdk 35
+        versionCode 9
+        versionName '1.8.0'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}

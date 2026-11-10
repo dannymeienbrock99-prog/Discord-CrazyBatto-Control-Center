@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101114">
+  <meta name="color-scheme" content="dark">
+  <title>Crazy_Batto Musik</title>
+  <link rel="icon" href="assets/logo.jpeg">
+  <link rel="stylesheet" href="assets/music-remote.css">
+  <script type="module" src="assets/music-remote.js"></script>
+</head>
+<body>
+<div class="music-app">
+  <header class="app-header"><h1><span>Crazy_Batto</span> Musik</h1><button class="icon-button" type="button" id="accountShortcut" aria-label="Mein Konto"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></button></header>
+  <p id="feedback" class="feedback" role="status" aria-live="polite">Verbindung wird hergestellt …</p>
+  <main>
+    <section id="playerPage" aria-label="Musiksteuerung">
+      <div class="channel-area">
+        <p id="guildName" class="guild-name" hidden></p>
+        <label for="voiceChannel">Sprachkanal</label>
+        <select id="voiceChannel" disabled><option value="">Kanal auswählen</option></select>
+        <p class="connection" id="connectionState" data-state="unknown"><span class="status-dot" aria-hidden="true"></span><span id="connectionText">Status noch nicht verfügbar</span></p>
+        <p id="permissionNote" class="help">Melde dich unter „Konto“ an, um den Musikbot zu steuern.</p>
+      </div>
+      <section class="now-playing" aria-label="Aktueller Titel">
+        <img class="track-symbol" src="assets/player-icons/music.svg" alt="" width="68" height="68">
+        <h2 id="currentTitle">Noch kein Titel</h2>
+        <p id="currentArtist">Wähle Musik aus deiner Bibliothek.</p>
+        <p id="queuePosition" class="help" hidden></p>
+        <p class="help"><a href="musik-quellen.html">Musikquellen, Urheber &amp; Lizenzen</a></p>
+      </section>
+      <div class="transport" aria-label="Wiedergabe">
+        <button type="button" class="icon-button" id="previous" disabled aria-label="Vorheriger Titel"><img src="assets/player-icons/previous.svg" alt=""></button>
+        <button type="button" class="play-button" id="playPause" disabled aria-label="Abspielen"><img id="playIcon" src="assets/player-icons/play.svg" alt=""></button>
+        <button type="button" class="icon-button" id="next" disabled aria-label="Nächster Titel"><img src="assets/player-icons/next.svg" alt=""></button>
+        <button type="button" class="icon-button stop-button" id="stop" disabled aria-label="Stoppen und Sprachkanal verlassen"><span aria-hidden="true"></span></button>
+      </div>
+      <div class="volume-area"><label for="volume">Lautstärke</label><output id="volumeValue" for="volume">–</output><input type="range" id="volume" min="0" max="100" step="1" value="50" disabled aria-label="Lautstärke des Bots"></div>
+      <section class="library-section">
+        <div class="tabs" role="tablist" aria-label="Musikauswahl">
+          <button type="button" role="tab" id="libraryTab" aria-controls="libraryPanel" aria-selected="true">Bibliothek</button>
+          <button type="button" role="tab" id="queueTab" aria-controls="queuePanel" aria-selected="false" tabindex="-1">Warteschlange <span id="queueCount"></span></button>
+        </div>
+        <div role="tabpanel" id="libraryPanel" aria-labelledby="libraryTab">
+          <label class="sr-only" for="playlist">Playlist</label><select id="playlist" disabled><option value="all">Alle Titel</option></select>
+          <label class="search-field"><img src="assets/player-icons/search.svg" alt=""><span class="sr-only">Titel suchen</span><input id="search" type="search" placeholder="Titel suchen" autocomplete="off" maxlength="160"></label>
+          <div id="trackList" class="track-list"></div>
+          <p id="libraryEmpty" class="empty-state">Deine Musik erscheint hier.</p>
+        </div>
+        <div role="tabpanel" id="queuePanel" aria-labelledby="queueTab" hidden><div id="queueList" class="track-list"></div><p id="queueEmpty" class="empty-state">Die Warteschlange ist leer.</p></div>
+      </section>
+    </section>
+    <section id="accountPage" class="account-page" aria-labelledby="accountHeading" hidden>
+      <h2 id="accountHeading">Dein Konto</h2>
+      <p class="help">Melde dich mit deinem Konto von crazybatto.de an.</p>
+      <form id="loginForm">
+        <label for="email">E-Mail-Adresse</label><input id="email" type="email" autocomplete="username" required maxlength="254">
+        <label for="password">Passwort</label><input id="password" type="password" autocomplete="current-password" required maxlength="1024">
+        <button class="primary-button" type="submit">Anmelden</button>
+        <a href="registrierung.html" target="_blank" rel="noopener">Konto erstellen oder Zugang beantragen</a>
+      </form>
+      <div id="signedIn" hidden>
+        <h3 id="accountName"></h3><p id="accountEmail" class="help"></p>
+        <a href="registrierung.html" target="_blank" rel="noopener">App-Freigabe verwalten</a>
+        <div id="musicApkSection" class="account-section"><h3>Eigene Android-App</h3><p class="help">Installiere die Musiksteuerung zusätzlich zu deiner bisherigen Discord-App. Benötigt Android 8 oder neuer und deine App-Freigabe.</p><a class="primary-button" href="/api/account/download/music-remote" download="Crazy_Batto-Musik-1.0.0.apk">Musik-App 1.0.0 herunterladen</a></div>
+        <div class="account-section"><h3>Discord verbinden</h3><p id="discordName" class="help">Noch kein Discord-Konto verbunden.</p>
+          <button id="linkDiscord" class="primary-button" type="button">Discord verbinden</button>
+          <div id="linkFlow" hidden><p>Öffne Discord und bestätige die Verbindung. Kehre danach in diese App zurück.</p><p id="linkCode" class="help"></p><a id="authorizeDiscord" class="primary-button" target="_blank" rel="noopener">Discord öffnen</a><button id="cancelLink" class="text-button" type="button">Abbrechen</button></div>
+          <button id="unlinkDiscord" class="text-button" type="button" hidden>Discord-Verbindung trennen</button>
+        </div>
+        <button id="logout" class="secondary-button" type="button">Abmelden</button>
+      </div>
+      <div class="account-section"><h3>Musik für euren Sprachkanal</h3><p class="help">Wähle einen verfügbaren Sprachkanal und tritt ihm in Discord bei. Die Musik läuft auf dem Server weiter, wenn du diese App schließt.</p><p class="help">Der Bot verwendet eure freigegebenen MP3- und MP4-Titel auf dem NAS.</p><button type="button" class="secondary-button" id="refresh">Verbindung aktualisieren</button></div>
+      <footer><a href="index.html" target="_blank" rel="noopener">Webseite</a><a href="cookies.html" target="_blank" rel="noopener">Cookies &amp; Speicher</a><a href="impressum.html" target="_blank" rel="noopener">Impressum</a><span>Musik-App 1.0.0</span></footer>
+    </section>
+  </main>
+  <nav class="bottom-nav" aria-label="App-Bereiche"><button type="button" id="navPlayer" aria-current="page"><img src="assets/player-icons/music.svg" alt="">Player</button><button type="button" id="navAccount"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>Konto</button></nav>
+</div>
+<noscript>Bitte JavaScript aktivieren, um den Musikbot zu steuern.</noscript>
+</body></html>

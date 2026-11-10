@@ -1,0 +1,31 @@
+﻿<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#101216">
+  <title>Schulungsanmeldung – Crazy_Batto</title>
+  <link rel="icon" href="assets/logo.jpeg"><link rel="stylesheet" href="assets/site.css"><link rel="stylesheet" href="assets/account.css"><link rel="stylesheet" href="assets/training.css">
+  <link rel="stylesheet" href="assets/cookie-consent.css"><script src="assets/cookie-consent.js" defer></script><script type="module" src="assets/training.js"></script>
+<script src="assets/site.js" defer></script></head>
+<body><div id="cb-website" class="cb-site"><div class="cb-shell">
+<header class="cb-header"><div class="cb-header-row"><a class="cb-brand" href="index.html"><img src="assets/logo.jpeg" width="1122" height="1402" alt="Crazy_Batto-Drachenlogo"><span>Crazy_Batto<small>HARDWARE · GAMING · KOOPERATIONSPARTNER</small></span></a><nav class="cb-nav" aria-label="Hauptnavigation"><a href="index.html">Start</a><a href="index.html#cb-team">Kooperationspartner</a><a href="media-player.html">Player</a><a href="schulungen.html" aria-current="page">Schulungen</a><a href="registrierung.html">Mein Konto</a><a href="mein-profil.html">Mein Profil</a></nav></div></header>
+<main class="cb-account-wrap cb-training" data-training-page="registration">
+  <div class="cb-account-heading"><p class="cb-eyebrow">Lernen mit Crazy_Batto</p><h1>Dein nächster Schritt.</h1><p>Melde dich für eine Schulung als Live-Creator oder Moderator an. Crazy_Batto prüft deine Anmeldung; den aktuellen Stand findest du hier.</p></div>
+  <div class="cb-training-courses" aria-label="Schulungen"><section class="cb-account-card"><span class="cb-eyebrow">01 · Live-Creator</span><h2>Vor der Kamera.</h2><p>Du möchtest dich als Live-Creator weiterentwickeln? Wähle diese Schulung in deiner Anmeldung.</p></section><section class="cb-account-card"><span class="cb-eyebrow">02 · Moderator</span><h2>Für die Community.</h2><p>Du interessierst dich für die Moderation von Livestreams? Wähle die Schulung für Moderatoren.</p></section></div>
+  <div class="cb-account-actions"><button id="trainingRefresh" class="cb-account-button secondary" type="button">Stand aktualisieren</button><a id="trainingAdminLink" class="cb-account-button secondary" href="schulungen-admin.html" hidden>Schulungen verwalten</a></div>
+  <p id="trainingFeedback" class="cb-account-feedback" role="status" aria-live="polite">Anmeldung wird geprüft …</p>
+  <section id="trainingGate" class="cb-account-card" hidden><h2 id="trainingGateTitle">Mit deinem Konto anmelden</h2><p id="trainingGateCopy">Melde dich mit deiner bestätigten E-Mail-Adresse an, um eine Schulung anzufragen und deine Anmeldungen zu sehen.</p><div class="cb-account-actions"><a class="cb-account-button" href="registrierung.html">Zur Anmeldung</a></div></section>
+  <div id="trainingContent" hidden>
+    <section class="cb-account-card"><h2>Zur Schulung anmelden</h2><p id="trainingAccount" class="cb-account-help"></p>
+      <p class="cb-training-note" id="trainingPrivacy">Deine Angaben werden nicht öffentlich angezeigt. Sie dienen ausschließlich der Bearbeitung deiner Schulungsanmeldung durch Crazy_Batto und die Administratoren.</p>
+      <form id="trainingForm" class="cb-account-form" aria-describedby="trainingPrivacy trainingExpectation">
+        <div class="cb-training-fields"><div class="cb-training-field"><label for="trainingCourse">Schulung</label><select id="trainingCourse" name="course" required><option value="">Bitte auswählen</option><option value="creator">Live-Creator</option><option value="moderator">Moderator</option></select></div><div class="cb-training-field"><label for="trainingName">Name</label><input id="trainingName" name="name" autocomplete="name" minlength="2" maxlength="80" required></div><div class="cb-training-field"><label for="trainingAge">Alter</label><input id="trainingAge" name="age" type="number" inputmode="numeric" min="1" max="120" step="1" required></div><div class="cb-training-field"><label for="trainingTikTok">TikTok-Name</label><input id="trainingTikTok" name="tiktokName" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="100" placeholder="@deinname" required></div><div class="cb-training-field"><label for="trainingDiscord">Discord-Name</label><input id="trainingDiscord" name="discordName" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="100" placeholder="Dein Discord-Benutzername" required></div></div>
+        <p id="trainingExpectation" class="cb-account-help">Deine Anmeldung ist zunächst eine Anfrage. Sie bestätigt weder einen Termin noch einen bereits freigeschalteten Schulungszugang.</p>
+        <button id="trainingSubmit" type="submit">Anmeldung senden</button>
+      </form>
+    </section>
+    <section class="cb-account-card"><h2>Meine Schulungsanmeldungen</h2><div id="trainingRegistrations"></div></section>
+  </div>
+  <noscript><p class="cb-account-feedback">Aktiviere JavaScript, um deine Schulungsanmeldung zu senden und ihren Status zu sehen.</p></noscript>
+</main>
+<footer class="cb-footer"><span class="cb-footer-brand">Crazy_Batto · Kooperationspartner</span><a href="index.html#cb-kontakt">Kontakt</a><a href="impressum.html">Impressum</a></footer>
+</div></div><nav class="cb-cookie-footer" aria-label="Datenschutzeinstellungen"><a href="cookies.html">Cookies &amp; Speicher</a><button type="button" data-cookie-settings>Cookie-Einstellungen</button></nav></body></html>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101216">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Produkte verwalten – Crazy_Batto</title>
+  <link rel="icon" href="assets/logo.jpeg">
+  <link rel="stylesheet" href="assets/site.css">
+  <link rel="stylesheet" href="assets/account.css">
+  <link rel="stylesheet" href="assets/products.css">
+  <link rel="stylesheet" href="assets/cookie-consent.css">
+  <script src="assets/site.js" defer></script>
+  <script src="assets/cookie-consent.js" defer></script>
+  <script type="module" src="assets/products-admin.js"></script>
+</head>
+<body>
+<div id="cb-website" class="cb-site"><div class="cb-shell">
+  <header class="cb-header"><div class="cb-header-row">
+    <a class="cb-brand" href="index.html"><img src="assets/logo.jpeg" width="1122" height="1402" alt="Crazy_Batto-Drachenlogo"><span>Crazy_Batto<small>HARDWARE · GAMING · KOOPERATIONSPARTNER</small></span></a>
+    <nav class="cb-nav" aria-label="Hauptnavigation"><a href="index.html">Start</a><a href="products.html">Produkte &amp; Empfehlungen</a><a href="admin.html">Admin-Verwaltung</a><a href="products-admin.html" aria-current="page">Produkte verwalten</a><a href="registrierung.html">Mein Konto</a></nav>
+  </div></header>
+  <main class="cb-account-wrap cb-products-admin" id="productsAdmin" aria-busy="true">
+    <div class="cb-account-heading"><p class="cb-eyebrow">Crazy_Batto · Verwaltung</p><h1>Deine Produktauswahl.</h1><p>Produkte mit eigenen Bildern und Links vorstellen. Hier bearbeitest du auch die Verweise auf RGB Slotcover und MyASUS.</p></div>
+    <p class="cb-account-feedback" id="productsAdminStatus" role="status" aria-live="polite">Berechtigung wird geprüft …</p>
+    <div class="cb-account-actions"><button class="cb-account-button secondary" id="productsReload" type="button">Gespeicherten Stand laden</button><a class="cb-account-button secondary" href="admin.html">Zur Verwaltung</a><a class="cb-account-button secondary" href="products.html" target="_blank" rel="noopener">Öffentliche Seite ansehen ↗</a></div>
+    <section class="cb-account-card" id="productsGate" data-account-spaced><h2>Nur für Administratoren</h2><p id="productsGateText">Melde dich mit deinem bestätigten Administratorkonto an, um Produkte zu bearbeiten.</p><a class="cb-account-button" href="registrierung.html">Zur Anmeldung</a></section>
+    <form class="cb-account-form" id="productsEditor" hidden data-account-spaced>
+      <div class="cb-products-savebar"><p id="productsDraftState" role="status" aria-live="polite"></p><button type="submit" id="productsSave">Änderungen speichern</button></div>
+      <section class="cb-account-card"><div class="cb-products-heading"><div><h2>Produkte</h2><p id="productsAdminCount"></p></div><button class="cb-account-button secondary" type="button" id="productsAdd">+ Produkt hinzufügen</button></div><p class="cb-account-help">Bild, Name, Beschreibung und Produktlink sind frei belegbar. Mit „Öffentlich anzeigen“ bestimmst du, welche Produkte Besucher sehen. Änderungen erscheinen nach dem Speichern.</p></section>
+      <p class="cb-products-empty" id="productsAdminEmpty" hidden>Noch keine Produkte. Über „Produkt hinzufügen“ legst du den ersten Eintrag an.</p>
+      <div id="productsEntries"></div>
+      <section class="cb-account-card"><p class="cb-eyebrow">Startseite &amp; Produktauswahl</p><h2>RGB Slotcover &amp; MyASUS</h2><p>Diese Namen, Beschreibungen und Links erscheinen an beiden Stellen.</p><div class="cb-products-link-editor" id="productsLinks"></div></section>
+      <p class="cb-account-help">Hochgeladene Bilder werden auf deinem NAS gespeichert. JPG, PNG oder WebP, ohne Animation, höchstens 8 MiB. Entfernte Produkte löschen keine Originaldateien.</p>
+    </form>
+    <noscript><p>Aktiviere JavaScript, um die Produkte zu verwalten.</p></noscript>
+  </main>
+  <footer class="cb-footer"><span class="cb-footer-brand">Crazy_Batto · Kooperationspartner</span><span class="cb-footer-links"><a href="products.html">Produkte</a> · <a href="index.html#cb-kontakt">Kontakt</a> · <a href="impressum.html">Impressum</a></span></footer>
+</div></div>
+<nav class="cb-cookie-footer" aria-label="Datenschutzeinstellungen"><a href="cookies.html">Cookies &amp; Speicher</a><button type="button" data-cookie-settings>Cookie-Einstellungen</button></nav>
+</body></html>

@@ -1,0 +1,11 @@
+.cb-suite-license-output {
+  display: block;
+  margin: .8rem 0;
+  padding: .8rem;
+  border: 1px solid currentColor;
+  border-radius: .5rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  user-select: all;
+}
+.cb-suite-license-output[hidden] { display: none; }

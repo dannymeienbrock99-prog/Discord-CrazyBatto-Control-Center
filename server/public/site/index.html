@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0b0c0f">
+  <meta name="description" content="Crazy_Batto Discord App. Mit Discord registrieren und nach persönlicher Freigabe die Android-App herunterladen.">
+  <title>Crazy_Batto Discord App</title>
+  <link rel="stylesheet" href="/site/assets/site.css">
+  <script src="/site/assets/site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Zum Inhalt</a>
+  <header class="site-header wrap">
+    <a class="brand" href="/" aria-label="Crazy_Batto – Startseite">Crazy_Batto</a>
+    <nav class="section-nav" aria-label="Website-Bereiche" hidden>
+      <a id="nav-about" href="#ueber-mich" hidden>Über mich</a>
+      <a id="nav-setup" href="#mein-setup" hidden>Mein Setup</a>
+      <a id="nav-apps" href="#meine-apps" hidden>Meine Apps</a>
+    </nav>
+    <a class="button header-cta" href="/portal"><span>Zur Registrierung</span><svg class="icon" aria-hidden="true"><use href="/site/assets/icons.svg#arrow-right"></use></svg></a>
+  </header>
+  <main id="main" tabindex="-1">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-art" aria-hidden="true"><img src="/site/assets/brand-dragon.jpeg" width="1122" height="1402" alt="" fetchpriority="high"></div>
+      <div class="hero-copy">
+        <h1 id="hero-title">Crazy_Batto <span>Discord App</span></h1>
+        <p id="hero-text" class="hero-intro" hidden></p>
+        <p class="registration-copy">Mit Discord registrieren. Nach meiner Freigabe kannst du die Android-App herunterladen.</p>
+        <a class="button hero-cta" href="/portal"><span>Zugang anfragen</span><svg class="icon" aria-hidden="true"><use href="/site/assets/icons.svg#arrow-right"></use></svg></a>
+        <a class="status-link" href="/portal">Schon registriert? Status ansehen</a>
+      </div>
+    </section>
+    <div id="site-notice" class="site-notice wrap" role="status" hidden><p>Die Website-Inhalte konnten nicht geladen werden.</p><button id="retry-content" class="text-link" type="button">Erneut laden</button></div>
+    <section id="ueber-mich" class="content-section about-section wrap" aria-labelledby="about-title" hidden>
+      <div class="about-heading"><h2 id="about-title">Über mich</h2></div>
+      <div class="about-content"><div id="about-media" class="about-media" hidden></div><div id="about-text" class="content-text" hidden></div></div>
+    </section>
+    <section id="mein-setup" class="content-section setup-section wrap" aria-labelledby="setup-title" hidden>
+      <div class="section-heading"><h2 id="setup-title">Mein Setup</h2><p id="setup-text" class="content-text" hidden></p></div>
+      <div id="setup-gallery" class="photo-gallery" hidden></div>
+      <dl id="setup-components" class="component-list" hidden></dl>
+    </section>
+    <section id="meine-apps" class="content-section apps-section wrap" aria-labelledby="apps-title" hidden>
+      <div class="section-heading"><h2 id="apps-title">Meine Apps</h2></div>
+      <div id="app-list" class="app-list"></div>
+    </section>
+    <section id="registration-end" class="registration-end wrap" aria-labelledby="registration-title" hidden>
+      <div><h2 id="registration-title">Dein Zugang zur Discord-App</h2><p>Mit Discord registrieren. Nach meiner Freigabe kannst du die Android-App herunterladen.</p></div>
+      <a class="button" href="/portal"><span>Zur Registrierung</span><svg class="icon" aria-hidden="true"><use href="/site/assets/icons.svg#arrow-right"></use></svg></a>
+    </section>
+  </main>
+  <footer class="site-footer wrap">
+    <a class="footer-brand" href="/">Crazy_Batto</a>
+    <nav id="social-links" class="social-links" aria-label="Weitere Links" hidden></nav>
+    <a class="text-link footer-registration" href="/portal"><span>Zur Registrierung</span><svg class="icon" aria-hidden="true"><use href="/site/assets/icons.svg#arrow-right"></use></svg></a>
+  </footer>
+  <dialog id="image-dialog" class="image-dialog" aria-label="Bildansicht">
+    <div class="image-dialog-bar"><p id="image-title"></p><button id="close-image" class="close-image" type="button" aria-label="Bildansicht schließen"><svg class="icon" aria-hidden="true"><use href="/site/assets/icons.svg#close"></use></svg></button></div>
+    <img id="large-image" alt="">
+    <p id="image-caption" hidden></p>
+  </dialog>
+</body>
+</html>

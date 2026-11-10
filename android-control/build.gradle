@@ -1,0 +1,8 @@
+plugins {
+    id 'com.android.application' version '8.13.2' apply false
+}
+allprojects {
+    if (rootProject.hasProperty('chatBuildRoot')) {
+        layout.buildDirectory = file("${rootProject.property('chatBuildRoot')}/${project.name}")
+    }
+}

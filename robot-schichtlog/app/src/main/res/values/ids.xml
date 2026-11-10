@@ -1,0 +1,23 @@
+<resources>
+    <item type="id" name="start_robot" />
+    <item type="id" name="start_order" />
+    <item type="id" name="start_personnel" />
+    <item type="id" name="start_article" />
+    <item type="id" name="start_program" />
+    <item type="id" name="job_scroll" />
+    <item type="id" name="manual_scroll" />
+    <item type="id" name="photos_scroll" />
+    <item type="id" name="stats_scroll" />
+    <item type="id" name="job_personnel" />
+    <item type="id" name="job_quantity" />
+    <item type="id" name="job_event" />
+    <item type="id" name="job_missing_parts" />
+    <item type="id" name="job_important" />
+    <item type="id" name="job_note" />
+    <item type="id" name="job_handover" />
+    <item type="id" name="history_search" />
+    <item type="id" name="history_date" />
+    <item type="id" name="history_shift" />
+    <item type="id" name="history_robot" />
+    <item type="id" name="history_list" />
+</resources>

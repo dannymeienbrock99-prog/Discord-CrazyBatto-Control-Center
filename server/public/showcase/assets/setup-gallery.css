@@ -1,0 +1,490 @@
+/* Larger type and editable photo areas, limited to the two setup pages. */
+#cb-website.cb-editable-setups {
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+#cb-website.cb-editable-setups .cb-nav a {
+  font-size: 14px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+#cb-website.cb-editable-setups .cb-brand small,
+#cb-website.cb-editable-setups .cb-eyebrow,
+#cb-website.cb-editable-setups .cb-breadcrumb,
+#cb-website.cb-editable-setups .cb-breadcrumb-separator,
+#cb-website.cb-editable-setups .cb-breadcrumb-current,
+#cb-website.cb-editable-setups .cb-setup-kicker,
+#cb-website.cb-editable-setups .cb-hero-specs span,
+#cb-website.cb-editable-setups .cb-spec-list dt,
+#cb-website.cb-editable-setups .cb-setup-specs dt {
+  font-size: 13px;
+}
+
+#cb-website.cb-editable-setups .cb-display {
+  font-size: clamp(39px, 6.3vw, 66px);
+}
+
+#cb-website.cb-editable-setups .cb-gaming-intro .cb-display {
+  font-size: clamp(38px, 5.7vw, 60px);
+}
+
+#cb-website.cb-editable-setups h2 {
+  font-size: clamp(26px, 3.5vw, 34px);
+}
+
+#cb-website.cb-editable-setups h3,
+#cb-website.cb-editable-setups .cb-spec-group h3 {
+  font-size: 21px;
+}
+
+#cb-website.cb-editable-setups .cb-setup-story h3 {
+  font-size: 27px;
+}
+
+#cb-website.cb-editable-setups .cb-lead,
+#cb-website.cb-editable-setups .cb-setup-story p,
+#cb-website.cb-editable-setups .cb-about-copy p {
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+#cb-website.cb-editable-setups .cb-spec-list dd,
+#cb-website.cb-editable-setups .cb-setup-specs dd,
+#cb-website.cb-editable-setups .cb-hero-specs strong {
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+#cb-website.cb-editable-setups .cb-button,
+#cb-website.cb-editable-setups .cb-text-link {
+  min-height: 44px;
+  font-size: 15px;
+}
+
+#cb-website.cb-editable-setups .cb-text-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+#cb-website.cb-editable-setups .cb-footer,
+#cb-website.cb-editable-setups .cb-footer-brand span,
+#cb-website.cb-editable-setups figcaption {
+  font-size: 13px;
+}
+
+#cb-website.cb-editable-setups .cb-footer-brand {
+  font-size: 16px;
+}
+
+#cb-website.cb-editable-setups .cb-photo-editor {
+  --cb-photo-height: 300px;
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  padding: 16px;
+  color: var(--cb-ink);
+  background: #111215;
+  border: 1px solid #74603b;
+  border-radius: 12px;
+}
+
+#cb-website.cb-editable-setups .cb-photo-editor figure {
+  min-width: 0;
+  margin: 0;
+}
+
+#cb-website.cb-editable-setups .cb-photo-upload-icon {
+  display: none;
+}
+
+#cb-website.cb-editable-setups .cb-photo-editor[data-photo-slot="gaming-hero"] {
+  --cb-photo-height: clamp(250px, 26vw, 360px);
+}
+
+#cb-website.cb-editable-setups .cb-photo-editor[data-photo-slot="gaming-gallery"] {
+  --cb-photo-height: clamp(400px, 48vw, 560px);
+}
+
+#cb-website.cb-editable-setups .cb-photo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: var(--cb-photo-height);
+  padding: 26px 20px;
+  border: 1px dashed #76613b;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #1e1c17, #101114 75%);
+  color: var(--cb-muted);
+  text-align: center;
+  line-height: 1.65;
+}
+
+#cb-website.cb-editable-setups .cb-photo-empty::before {
+  content: "";
+  display: block;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  margin-bottom: 3px;
+  background: var(--cb-gold);
+  -webkit-mask: url("player-icons/upload.svg") center / contain no-repeat;
+  mask: url("player-icons/upload.svg") center / contain no-repeat;
+}
+
+#cb-website.cb-editable-setups .cb-photo-empty strong {
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+#cb-website.cb-editable-setups .cb-photo-empty p,
+#cb-website.cb-editable-setups .cb-photo-empty span {
+  max-width: 34ch;
+  font-size: 15px;
+}
+
+#cb-website.cb-editable-setups .cb-photo-stage {
+  display: grid;
+  place-items: center;
+  height: var(--cb-photo-height);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #39342a;
+  border-radius: 8px;
+  background: #090a0c;
+}
+
+#cb-website.cb-editable-setups .cb-photo-stage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: var(--cb-photo-height);
+  object-fit: contain;
+  object-position: center;
+}
+
+#cb-website.cb-editable-setups .cb-photo-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 0 0;
+  color: var(--cb-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+#cb-website.cb-editable-setups .cb-photo-caption [data-photo-caption] {
+  min-width: 0;
+}
+
+#cb-website.cb-editable-setups .cb-photo-count {
+  flex: 0 0 auto;
+  color: var(--cb-gold);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#cb-website.cb-editable-setups .cb-photo-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 9px;
+  min-width: 0;
+}
+
+#cb-website.cb-editable-setups .cb-photo-thumbs:empty {
+  display: none;
+}
+
+#cb-website.cb-editable-setups .cb-photo-thumbs button {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 76px;
+  padding: 4px;
+  background: #17181b;
+  border: 1px solid #534831;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#cb-website.cb-editable-setups .cb-photo-thumbs button[aria-pressed="true"] {
+  border-color: var(--cb-gold);
+  background: #292318;
+  box-shadow: inset 0 0 0 1px var(--cb-gold);
+}
+
+#cb-website.cb-editable-setups .cb-photo-thumbs button:hover {
+  border-color: var(--cb-gold);
+}
+
+#cb-website.cb-editable-setups .cb-photo-thumbs img {
+  display: block;
+  width: 100%;
+  height: 68px;
+  object-fit: contain;
+}
+
+#cb-website.cb-editable-setups .cb-photo-toolbar,
+#cb-website.cb-editable-setups .cb-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+#cb-website.cb-editable-setups .cb-photo-toolbar {
+  padding-top: 14px;
+  border-top: 1px solid #373127;
+}
+
+#cb-website.cb-editable-setups .cb-photo-library-tools .cb-photo-toolbar {
+  gap: 20px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+#cb-website.cb-editable-setups .cb-photo-library-tools .cb-photo-toolbar h2 {
+  margin-bottom: 10px;
+}
+
+#cb-website.cb-editable-setups .cb-photo-library-tools .cb-photo-toolbar p {
+  max-width: 72ch;
+}
+
+#cb-website.cb-editable-setups .cb-photo-library-tools > .cb-photo-status:not(:empty) {
+  margin-top: 14px;
+}
+
+#cb-website.cb-editable-setups .cb-photo-editor .cb-button {
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: 100%;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
+  cursor: pointer;
+}
+
+#cb-website.cb-editable-setups .cb-photo-editor .cb-button:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+#cb-website.cb-editable-setups .cb-photo-editor label {
+  color: var(--cb-gold);
+  font-size: 14px;
+}
+
+#cb-website.cb-editable-setups .cb-photo-name {
+  min-width: 0;
+  width: 100%;
+}
+
+#cb-website.cb-editable-setups form.cb-photo-name {
+  display: grid;
+  gap: 10px;
+}
+
+#cb-website.cb-editable-setups .cb-photo-name label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+#cb-website.cb-editable-setups .cb-photo-name .cb-button {
+  justify-self: start;
+}
+
+#cb-website.cb-editable-setups input.cb-photo-name,
+#cb-website.cb-editable-setups .cb-photo-name input {
+  display: block;
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #665437;
+  border-radius: 6px;
+  background: #0b0c0e;
+  color: var(--cb-ink);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+#cb-website.cb-editable-setups .cb-photo-editor input:focus-visible,
+#cb-website.cb-editable-setups .cb-photo-editor button:focus-visible,
+#cb-website.cb-editable-setups .cb-photo-library-tools button:focus-visible {
+  outline: 2px solid var(--cb-gold);
+  outline-offset: 3px;
+}
+
+#cb-website.cb-editable-setups .cb-photo-status {
+  color: var(--cb-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+#cb-website.cb-editable-setups .cb-photo-status:empty {
+  display: none;
+}
+
+#cb-website.cb-editable-setups .cb-photo-status[data-error="true"] {
+  color: #ffc9b6;
+}
+
+@media (max-width: 800px) {
+  #cb-website.cb-editable-setups .cb-gaming-intro {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+  }
+
+  #cb-website.cb-editable-setups .cb-photo-editor[data-photo-slot="gaming-hero"] {
+    --cb-photo-height: 320px;
+  }
+
+  #cb-website.cb-editable-setups .cb-setup-stage {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 580px) {
+  #cb-website.cb-editable-setups .cb-gaming-intro .cb-display {
+    font-size: clamp(38px, 10.5vw, 47px);
+  }
+
+  #cb-website.cb-editable-setups .cb-photo-editor {
+    --cb-photo-height: 270px;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  #cb-website.cb-editable-setups .cb-photo-editor[data-photo-slot="gaming-hero"] {
+    --cb-photo-height: 280px;
+  }
+
+  #cb-website.cb-editable-setups .cb-photo-editor[data-photo-slot="gaming-gallery"] {
+    --cb-photo-height: 360px;
+  }
+
+  #cb-website.cb-editable-setups .cb-photo-empty {
+    padding: 24px 14px;
+  }
+
+  #cb-website.cb-editable-setups .cb-photo-thumbs {
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 7px;
+  }
+
+  #cb-website.cb-editable-setups .cb-photo-thumbs button {
+    min-height: 66px;
+  }
+
+  #cb-website.cb-editable-setups .cb-photo-thumbs img {
+    height: 58px;
+  }
+
+  #cb-website.cb-editable-setups .cb-photo-toolbar > .cb-button,
+  #cb-website.cb-editable-setups .cb-photo-actions > .cb-button {
+    flex: 1 1 130px;
+  }
+}
+
+#cb-website.cb-editable-setups .cb-photo-unavailable {
+  max-width: 40ch;
+  padding: 24px;
+  color: var(--cb-muted);
+  font-size: 15px;
+  text-align: center;
+}
+
+#cb-website.cb-editable-setups .cb-photo-migration {
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid #665437;
+  border-radius: 10px;
+  background: #121315;
+}
+
+#cb-website.cb-editable-setups .cb-photo-migration summary {
+  min-height: 44px;
+  color: var(--cb-gold);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#cb-website.cb-editable-setups .cb-photo-migration > p {
+  margin: 12px 0 18px;
+  max-width: 78ch;
+}
+
+#cb-website.cb-editable-setups .cb-photo-migration-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
+  margin: 18px 0;
+  max-height: 600px;
+  overflow: auto;
+}
+
+#cb-website.cb-editable-setups .cb-photo-migration-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #443d30;
+  border-radius: 8px;
+  color: var(--cb-ink);
+  cursor: pointer;
+}
+
+#cb-website.cb-editable-setups .cb-photo-migration-item:has(input:checked) {
+  border-color: var(--cb-gold);
+  background: #292318;
+}
+
+#cb-website.cb-editable-setups .cb-photo-migration-item input {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  accent-color: var(--cb-gold);
+}
+
+#cb-website.cb-editable-setups .cb-photo-migration-item img {
+  width: 76px;
+  height: 76px;
+  flex: 0 0 76px;
+  border-radius: 5px;
+  object-fit: contain;
+  background: #08090b;
+}
+
+#cb-website.cb-editable-setups .cb-photo-migration-item span {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  overflow-wrap: anywhere;
+}
+
+#cb-website.cb-editable-setups .cb-photo-migration-item strong { font-size: 15px; }
+#cb-website.cb-editable-setups .cb-photo-migration-item small { font-size: 13px; color: var(--cb-muted); }
+#cb-website.cb-editable-setups .cb-photo-migration-item .cb-photo-migration-warning { color: #ffc9b6; }
+#cb-website.cb-editable-setups .cb-photo-library-tools button:disabled { opacity: .5; cursor: default; }
+#cb-website.cb-editable-setups .cb-photo-migration summary:focus-visible,
+#cb-website.cb-editable-setups .cb-photo-migration input:focus-visible { outline: 2px solid var(--cb-gold); outline-offset: 3px; }

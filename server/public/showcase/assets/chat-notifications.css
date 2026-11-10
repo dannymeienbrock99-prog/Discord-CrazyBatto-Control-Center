@@ -1,0 +1,13 @@
+.cb-chat-launcher,.cb-chat-toast { position:fixed; right:20px; z-index:45; padding:12px 17px; border:1px solid #d2b477; border-radius:12px; background:#191b20; color:#f0d9a1; box-shadow:0 5px 24px #0008; font:600 14px/1.4 system-ui,sans-serif; text-decoration:none; }
+.cb-chat-launcher { bottom:55px; }
+.cb-chat-toast { bottom:112px; max-width:min(340px,calc(100vw - 40px)); background:#e2c381; color:#17140d; }
+.cb-chat-launcher[hidden],.cb-chat-toast[hidden],.cb-chat-settings[hidden] { display:none; }
+#cb-website .cb-chat-settings { margin-top:30px; border:1px solid #5a4e36; background:#14161b; border-radius:12px; padding:24px; }
+#cb-website .cb-chat-settings h2 { font-size:22px; margin:0 0 12px; }
+#cb-website .cb-chat-settings p { line-height:1.6; }
+#cb-website .cb-chat-settings button { min-height:44px; margin:8px 10px 8px 0; padding:10px 15px; border:1px solid #b69a5e; border-radius:8px; background:#e2c381; color:#18140c; font:600 14px system-ui,sans-serif; cursor:pointer; }
+#cb-website .cb-chat-settings button[aria-pressed="true"] { background:#30372d; color:#d1edca; border-color:#76966d; }
+#cb-website .cb-chat-settings button:disabled { opacity:.55; cursor:default; }
+#cb-website .cb-chat-settings-note { color:#e7cc92; }
+#cb-website .cb-chat-settings-help { color:#b9af9c; font-size:13px; }
+@media(max-width:760px) { .cb-chat-launcher { right:12px; bottom:50px; padding:9px 12px; } .cb-chat-toast { right:12px; bottom:99px; } #cb-website .cb-chat-settings { padding:18px; } }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Crazy_Batto Control Center</string>
+    <string name="asset_statements" translatable="false">[{\"relation\":[\"delegate_permission/common.handle_all_urls\"],\"target\":{\"namespace\":\"web\",\"site\":\"https://crazybatto.de\"}}]</string>
+    <string name="browser_required_title">Control Center benötigt einen aktuellen Browser</string>
+    <string name="browser_required_message">Installiere oder aktualisiere Google Chrome auf diesem Handy. Öffne danach Crazy_Batto Control Center erneut. Die App zeigt deine private Verwaltung. Benachrichtigungen aktivierst du nach deiner Anmeldung in der App.</string>
+    <string name="chrome_install">Chrome öffnen</string>
+    <string name="close">Schließen</string>
+    <string name="store_unavailable">Öffne den Play Store und suche nach Google Chrome. Starte danach Crazy_Batto Control Center erneut.</string>
+</resources>

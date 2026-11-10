@@ -1,0 +1,21 @@
+{
+  "id": "/crazy-batto-website",
+  "name": "Crazy_Batto",
+  "short_name": "Crazy_Batto",
+  "description": "Deine Community, Apps und Musiksteuerung direkt auf dem Handy.",
+  "lang": "de",
+  "start_url": "/index.html?app=website",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101216",
+  "theme_color": "#101216",
+  "icons": [
+    { "src": "/assets/app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/assets/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Apps & Downloads", "url": "/apps.html" },
+    { "name": "Musiksteuerung", "url": "/music-remote.html" },
+    { "name": "Mein Konto", "url": "/registrierung.html" }
+  ]
+}

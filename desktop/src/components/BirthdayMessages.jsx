@@ -1,0 +1,18 @@
+import React,{useState} from 'react';
+import {Cake,CalendarDays,ImageOff,ImagePlus,Trash2} from 'lucide-react';
+import {BIRTHDAY_IMAGES,birthdayExample,birthdayImageError} from './birthday-images.mjs';
+import './birthday-messages.css';
+
+function BirthdayImage({url}){
+ const [failed,setFailed]=useState(null);
+ if(!url)return null;
+ if(birthdayImageError(url))return <p className="birthday-image-empty"><ImageOff size={18}/>Die Bildvorschau erscheint nach Eingabe einer gültigen öffentlichen Bildadresse.</p>;
+ if(failed===url)return <p className="birthday-image-empty"><ImageOff size={18}/>Das Bild konnte nicht geladen werden. Prüfe die öffentliche Bildadresse.</p>;
+ return <img className="birthday-message-image" src={url} alt="Bildvorschau für die Geburtstagsnachricht" referrerPolicy="no-referrer" onError={()=>setFailed(url)}/>;
+}
+
+export default function BirthdayMessages({settings,set}){
+ const [kind,setKind]=useState('greeting');
+ const greeting=kind==='greeting',templateKey=greeting?'greetingTemplate':'reminderTemplate',imageKey=greeting?'greetingImageUrl':'reminderImageUrl',imageError=birthdayImageError(settings[imageKey]||'');
+ return <section className="panel birthday-messages"><div className="birthday-message-heading"><h2>Nachrichten & Bilder</h2><p>Für Glückwünsche und Erinnerungen getrennt gestalten.</p></div><div className="tabs" role="tablist" aria-label="Geburtstagsnachricht auswählen"><button type="button" id="birthday-greeting-tab" role="tab" aria-selected={greeting} aria-controls="birthday-message-editor" className={greeting?'selected':''} onClick={()=>setKind('greeting')}><Cake size={17}/>Glückwunsch</button><button type="button" id="birthday-reminder-tab" role="tab" aria-selected={!greeting} aria-controls="birthday-message-editor" className={!greeting?'selected':''} onClick={()=>setKind('reminder')}><CalendarDays size={17}/>Erinnerung</button></div><div className="admin-pad" id="birthday-message-editor" role="tabpanel" aria-labelledby={greeting?'birthday-greeting-tab':'birthday-reminder-tab'}><label className="field">{greeting?'Glückwunschtext':'Erinnerungstext'}<textarea rows={4} maxLength={1400} value={settings[templateKey]||''} onChange={e=>set(templateKey,e.target.value)}/></label><p className="birthday-placeholder-hint">{'{name} · {date} · {days} · {website}'}</p><label className="field">{greeting?'Bildlink für den Glückwunsch':'Bildlink für die Erinnerung'} <span className="muted">optional</span><input type="url" maxLength={2048} value={settings[imageKey]||''} placeholder="https://…/bild.png" aria-invalid={!!imageError} onChange={e=>set(imageKey,e.target.value)}/>{imageError?<small className="error-text">{imageError}</small>:<small className="muted">Leer lassen, um diese Nachricht ohne Bild zu senden.</small>}</label><div className="birthday-image-actions"><button type="button" className="btn" onClick={()=>set(imageKey,BIRTHDAY_IMAGES[kind])}><ImagePlus size={16}/>{greeting?'Glückwunschbild verwenden':'Kalenderbild verwenden'}</button>{settings[imageKey]&&<button type="button" className="icon-btn" aria-label={greeting?'Glückwunschbild entfernen':'Erinnerungsbild entfernen'} onClick={()=>set(imageKey,'')}><Trash2 size={17}/></button>}</div><div className="birthday-preview birthday-rich-preview"><small>{greeting?'GLÜCKWUNSCH':'ERINNERUNG'} · VORSCHAU MIT BEISPIELDATEN</small>{settings.mentionMode==='everyone'&&<span className="mention">@everyone</span>}<p>{birthdayExample(settings[templateKey],settings.reminderDays)}</p><BirthdayImage key={kind} url={settings[imageKey]||''}/></div><p className="birthday-preview-footnote">Die Vorschau sendet nichts. Änderungen werden erst über „Auf dem Server speichern“ übernommen.</p></div></section>;
+}

@@ -1,0 +1,53 @@
+.cb-birthdays {padding:36px 24px 56px;}
+#cb-website .birthday-heading {display:flex;gap:24px;align-items:center;justify-content:space-between;margin-bottom:24px;}
+#cb-website .birthday-heading h1 {font-size:clamp(29px,4.2vw,48px);line-height:1.15;letter-spacing:-1px;margin:10px 0 16px;overflow-wrap:anywhere;}
+.birthday-heading h1 span {color:#d9b770;}
+#cb-website .cb-birthdays a.cb-account-button:not(.secondary) {color:#16130d;}
+.birthday-heading p {max-width:720px;color:#c4bfb4;}
+.birthday-layout {display:grid;grid-template-columns:minmax(0,1.8fr) minmax(260px,1fr);gap:20px;}
+.birthday-panel {min-width:0;padding:24px;border:1px solid #51452e;border-radius:14px;background:linear-gradient(140deg,#191a1eea,#0e1014f5);}
+#cb-website .birthday-panel h2 {font-size:23px;color:#f2ddb0;margin-bottom:14px;line-height:1.3;}
+.birthday-toolbar {display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;}
+#cb-website .birthday-toolbar h2 {margin:2px 0 0;}
+.birthday-month-buttons {display:flex;gap:5px;}
+.birthday-month-buttons button {min-width:38px;min-height:40px;padding:6px 10px;}
+.birthday-weekdays,.birthday-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}
+.birthday-weekdays {text-align:center;color:#b9b4aa;font-size:12px;padding-bottom:9px;}
+.birthday-grid {border-top:1px solid #343128;border-left:1px solid #343128;}
+.birthday-day {min-width:0;min-height:88px;border-right:1px solid #343128;border-bottom:1px solid #343128;padding:6px;background:#111318;}
+.birthday-day.is-empty {background:#0a0c10;}
+.birthday-day.is-today {box-shadow:inset 0 0 0 1px #d9b770;background:#2b2418;}
+.birthday-day time {display:inline-block;color:#b9b4aa;font-size:12px;}
+.birthday-day.is-today time {color:#f4d99e;font-weight:bold;}
+.birthday-day.has-birthday {background:linear-gradient(150deg,#29251b,#17191c);}
+.birthday-person {display:block;font-size:11px;line-height:1.3;overflow-wrap:anywhere;color:#f2ddb0;margin-top:5px;}
+.birthday-muted {color:#aaa69d;font-size:13px;line-height:1.65;}
+#cb-website #monthSummary {margin-top:14px;}
+#cb-website .birthday-leap {margin-top:10px;}
+.birthday-search {display:grid;gap:7px;color:#c4bfb4;font-size:13px;}
+.birthday-search input {width:100%;padding:10px 12px;min-height:44px;background:#080a0e;border:1px solid #625c50;border-radius:8px;color:#faf8f2;font:inherit;}
+.birthday-search input:focus-visible {outline:2px solid #e9c779;outline-offset:3px;}
+.birthday-list {margin-top:16px;max-height:460px;overflow:auto;}
+.birthday-list-item {display:flex;align-items:center;gap:12px;border-top:1px solid #373128;padding:15px 0;}
+.birthday-list-item:first-child {border-top:0;}
+.birthday-date-badge {flex-shrink:0;display:grid;text-align:center;width:48px;border:1px solid #625033;border-radius:9px;padding:5px;background:#242017;color:#ecd194;font-size:12px;line-height:1.3;}
+.birthday-date-badge strong {font-size:20px;}
+.birthday-list-copy {min-width:0;overflow-wrap:anywhere;}
+.birthday-list-copy small {display:block;color:#b9b4aa;font-size:12px;}
+#cb-website .birthday-alert {padding:20px 24px;margin:20px 0;border:1px solid #a8894c;border-radius:12px;background:linear-gradient(115deg,#342917,#161718);}
+#cb-website .birthday-alert h2 {font-size:20px;color:#f2ddb0;margin-bottom:5px;}
+.birthday-own {display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:24px;}
+.birthday-own p {color:#b9b4aa;}
+.cb-account-form .birthday-check {display:flex;align-items:flex-start;gap:12px;cursor:pointer;}
+.cb-account-form .birthday-check input {width:20px;min-height:20px;height:20px;margin:4px 0 0;flex-shrink:0;accent-color:#d9b770;}
+.birthday-check span {line-height:1.6;font-size:14px;}
+.birthday-two-fields {display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.birthday-preview {white-space:pre-wrap;overflow-wrap:anywhere;background:#22242a;border-left:3px solid #d9b770;border-radius:6px;padding:18px;}
+.birthday-preview hr {border:0;border-top:1px solid #484338;margin:18px 0;}
+.birthday-panel code {font-size:13px;color:#f2ddb0;}
+.birthday-delivery {padding:10px 0;border-bottom:1px solid #373128;font-size:13px;overflow-wrap:anywhere;}
+#cb-website .birthday-own .cb-account-button {margin-top:12px;}
+@media(max-width:850px){.birthday-layout{grid-template-columns:1fr;}.birthday-list{max-height:360px;}.birthday-own{grid-template-columns:1fr;gap:20px;}.birthday-heading{flex-wrap:wrap;}.birthday-day{min-height:83px;}}
+@media(max-width:480px){.cb-birthdays{padding:25px 12px 36px;}.birthday-panel{padding:15px;}.birthday-toolbar{align-items:flex-start;}.birthday-month-buttons{gap:3px;}.birthday-month-buttons button{padding:5px 8px;min-width:30px;}#cb-website .birthday-toolbar h2{font-size:19px;}.birthday-toolbar .cb-eyebrow{font-size:9px;}.birthday-day{padding:4px;min-height:72px;}.birthday-person{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.6;}.birthday-two-fields{gap:10px;}#cb-website .birthday-alert{padding:16px;}}
+
+.cb-account-form .birthday-signup-choice{display:flex;align-items:flex-start;gap:12px;font-size:14px;line-height:1.6}.cb-account-form .birthday-signup-choice input{width:20px;min-height:20px;height:20px;flex-shrink:0;margin-top:4px;accent-color:#d9b770}

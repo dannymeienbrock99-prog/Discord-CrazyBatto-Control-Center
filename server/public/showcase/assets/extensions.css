@@ -1,0 +1,23 @@
+#cb-website .cb-birth-fields { display:grid; grid-template-columns:1fr 1.5fr 1.3fr; gap:12px; border:0; padding:0; margin:16px 0; }
+#cb-website .cb-birth-fields legend { margin-bottom:12px; font-weight:700; }
+#cb-website .cb-profile-avatar { width:112px; height:112px; border-radius:50%; object-fit:cover; border:2px solid #d9b973; margin:12px 0; }
+#cb-website .cb-profile-note { border-left:3px solid #d9b973; padding:12px 16px; background:#d9b97312; }
+#cb-website .cb-playlist-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
+#cb-website .cb-playlist-toolbar select { min-width:150px; max-width:100%; flex:1; }
+#cb-website .cb-playlist-toolbar select, #cb-website .cb-playlist-toolbar button { font:inherit; color:#f1e4c9; background:#111318; border:1px solid #897042; border-radius:8px; padding:10px 12px; }
+#cb-website .cb-playlist-toolbar button:disabled { opacity:.4; }
+#cb-website .cb-video-stage { position:relative; margin:18px auto; max-width:1000px; padding:12px; border:1px solid #897042; border-radius:12px; background:#050608; }
+#cb-website .cb-video-stage video { display:block; width:100%; max-height:65vh; }
+#cb-website .cb-spotify { margin:16px 0; padding:18px; border:1px solid #897042; border-radius:12px; background:#101216; color:#eee; }
+#cb-website .cb-spotify iframe { width:100%; border:0; border-radius:12px; margin-top:16px; }
+.cb-playlist-dialog { width:min(620px,calc(100vw - 36px)); max-height:85vh; overflow:auto; box-sizing:border-box; color:#f1e4c9; background:#111318; border:1px solid #b19354; border-radius:14px; padding:22px; }
+.cb-playlist-dialog::backdrop { background:#000b; }
+.cb-playlist-dialog input,.cb-playlist-dialog select { width:100%; min-width:0; box-sizing:border-box; color:inherit; background:#07090b; border:1px solid #897042; border-radius:6px; font:inherit; padding:10px; margin:8px 0; }
+.cb-playlist-dialog button { color:inherit; background:#27251f; border:1px solid #897042; border-radius:6px; padding:9px 12px; cursor:pointer; }
+.cb-playlist-dialog li { display:flex; align-items:center; gap:6px; margin:10px 0; }
+.cb-playlist-dialog li span { flex:1; overflow-wrap:anywhere; }
+.cb-playlist-dialog ol { padding:0; list-style:none; }
+.cb-playlist-dialog .cb-account-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.cb-playlist-dialog [role=status] { white-space:pre-line; }
+#cb-website [hidden],.cb-playlist-dialog [hidden] { display:none !important; }
+@media (max-width:520px) { #cb-website .cb-birth-fields { gap:8px; } .cb-playlist-dialog { padding:14px; } }

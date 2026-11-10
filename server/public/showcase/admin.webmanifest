@@ -1,0 +1,20 @@
+{
+  "id": "/crazy-batto-verwaltung",
+  "name": "Crazy_Batto Verwaltung",
+  "short_name": "CB Verwaltung",
+  "description": "App-Anfragen und Freigaben mit deinem Administratorkonto verwalten.",
+  "lang": "de",
+  "start_url": "/admin.html?app=verwaltung",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101216",
+  "theme_color": "#101216",
+  "icons": [
+    { "src": "/assets/app-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/assets/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Offene Anfragen", "url": "/admin.html#app-anfragen" },
+    { "name": "Apps & Downloads", "url": "/apps.html" }
+  ]
+}
