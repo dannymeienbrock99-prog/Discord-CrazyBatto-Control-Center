@@ -58,6 +58,7 @@ public class MainActivity extends Activity {
     private DbHelper db;
     private FrameLayout content;
     private TextView liveStatus;
+    private ServerUploadUi serverUploadUi;
     private Button navJob;
     private Button navNew;
     private Button navHistory;
@@ -147,8 +148,19 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         clockHandler.removeCallbacks(clockTick);
         clockHandler.removeCallbacks(persistDraft);
+        if (serverUploadUi != null) serverUploadUi.destroy();
         if (db != null) db.close();
         super.onDestroy();
+    }
+
+    @Override protected void onStart() {
+        super.onStart();
+        if (serverUploadUi != null) serverUploadUi.startObserving();
+    }
+
+    @Override protected void onStop() {
+        if (serverUploadUi != null) serverUploadUi.stopObserving();
+        super.onStop();
     }
 
     @Override protected void onPause() {
@@ -201,6 +213,21 @@ public class MainActivity extends Activity {
         controlSync.setContentDescription("Auftragssynchronisierung mit dem privaten Control Center verwalten");
         controlSync.setOnClickListener(v -> RobotOrderSync.showSettings(this));
         root.addView(controlSync);
+
+        Button serverUpload = actionButton("ZUM SERVER HOCHLADEN", true);
+        serverUpload.setId(R.id.server_upload);
+        serverUpload.setContentDescription("Gespeicherte Aufträge und Bilder jetzt zum Server hochladen");
+        serverUpload.setMinHeight(dp(48));
+        LinearLayout.LayoutParams uploadParams = new LinearLayout.LayoutParams(-1, -2);
+        uploadParams.topMargin = dp(8);
+        root.addView(serverUpload, uploadParams);
+        TextView uploadStatus = text("", 12, false, design.muted);
+        uploadStatus.setId(R.id.server_upload_status);
+        uploadStatus.setMaxLines(2);
+        uploadStatus.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        uploadStatus.setPadding(dp(2), dp(4), dp(2), 0);
+        root.addView(uploadStatus);
+        serverUploadUi = new ServerUploadUi(this, design, serverUpload, uploadStatus);
 
         liveStatus = text("", 13, false, design.muted);
         liveStatus.setPadding(0, dp(4), 0, dp(10));

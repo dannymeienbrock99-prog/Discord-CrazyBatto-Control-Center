@@ -160,10 +160,23 @@ public final class NasSync {
     }
 
     static String queueSummary(Context context) {
-        try (Cursor rows=db(context).rawQuery("SELECT SUM(CASE WHEN sent<0 THEN 1 ELSE 0 END),SUM(CASE WHEN sent=0 THEN 1 ELSE 0 END),SUM(CASE WHEN sent=3 THEN 1 ELSE 0 END) FROM uploads",null)) {
+        try (Cursor rows=db(context).rawQuery("SELECT SUM(CASE WHEN sent<0 THEN 1 ELSE 0 END),SUM(CASE WHEN sent=0 THEN 1 ELSE 0 END),SUM(CASE WHEN sent=3 THEN 1 ELSE 0 END),SUM(CASE WHEN sent IN (1,2) THEN 1 ELSE 0 END) FROM uploads",null)) {
             rows.moveToFirst();
             return rows.getLong(1)+" Fotos warten · "+rows.getLong(2)+" Fotos auf crazybatto.de bestätigt"
-                    +(rows.getLong(0)>0?" · "+rows.getLong(0)+" Fotos prüfen (Details am Bild)":"");
+                    +(rows.getLong(0)>0?" · "+rows.getLong(0)+" Fotos prüfen (Details am Bild)":"")
+                    +(rows.getLong(3)>0?" · "+rows.getLong(3)+" Fotos bisher nur auf NAS/im gewählten Ordner":"");
+        }
+    }
+
+    static long pendingPhotos(Context context) {
+        try(Cursor rows=db(context).rawQuery("SELECT COUNT(*) FROM uploads WHERE sent=0",null)) {
+            rows.moveToFirst();return rows.getLong(0);
+        }
+    }
+
+    static boolean hasBlockedPhotos(Context context) {
+        try(Cursor rows=db(context).rawQuery("SELECT 1 FROM uploads WHERE sent<=0 OR sent IN (1,2) LIMIT 1",null)) {
+            return rows.moveToFirst();
         }
     }
 
@@ -191,20 +204,44 @@ public final class NasSync {
 
     /** Drained on NasUploadJob's single worker. Returns true for retryable failures. */
     static boolean uploadPending(Context context) {
+        return uploadPending(context,null,null);
+    }
+
+    private static final class UploadAttempt {
+        long completed;
+        boolean failed;
+        String details="";
+    }
+    private static boolean uploadFailure(UploadAttempt attempt,boolean retry,String details) {
+        if(attempt!=null){attempt.failed=true;attempt.details=details;}
+        return retry;
+    }
+
+    /** Manual server uploads must never follow a mid-transfer change to a NAS/folder target. */
+    static ServerUpload.Step uploadWebsiteBatch(Context context,String pairing) {
+        UploadAttempt attempt=new UploadAttempt();
+        boolean more=uploadPending(context,pairing,attempt);
+        if(!galleryCurrent(context,pairing))return new ServerUpload.Step(false,false,attempt.completed,"Serververbindung geändert oder abgelaufen. Bitte erneut verbinden.");
+        return new ServerUpload.Step(!attempt.failed,more,attempt.completed,attempt.details);
+    }
+
+    private static boolean uploadPending(Context context,String requiredPairing,UploadAttempt attempt) {
         SharedPreferences settings = prefs(context);
         Target destination;
         boolean isFolder, isWebsite;
         String revision;
         synchronized (NasSync.class) {
+            if(requiredPairing!=null&&!galleryCurrent(context,requiredPairing))
+                return uploadFailure(attempt,false,"Serververbindung geändert oder abgelaufen.");
             String url = settings.getString("url", "");
             String tree = settings.getString("tree", "");
             isFolder = !tree.isEmpty();
             isWebsite = settings.getBoolean("website", false);
-            if (isWebsite && settings.getBoolean("reauth", false)) return false;
-            if (!isWebsite && !isFolder && url.isEmpty()) return false;
+            if (isWebsite && settings.getBoolean("reauth", false)) return uploadFailure(attempt,false,"Geräte-Token erneut verbinden.");
+            if (!isWebsite && !isFolder && url.isEmpty()) return uploadFailure(attempt,false,"Fotospeicher ist nicht eingerichtet.");
             revision = settings.getString("revision", "");
             try {
-                if (isWebsite) destination = new WebsiteTarget(decrypt(settings))::upload;
+                if (isWebsite) destination = galleryTarget(context,revision)::upload;
                 else if (isFolder) destination = new FolderTarget(context, Uri.parse(tree))::upload;
                 else destination = new DavTarget(url, settings.getString("username", ""), decrypt(settings))::upload;
             } catch (Exception unavailable) {
@@ -212,7 +249,7 @@ public final class NasSync {
                 failure.put("detail", isWebsite ? "Geräte-Token erneut verbinden" : "NAS-Zugang erneut speichern");
                 db(context).update("uploads", failure, "sent=0", null);
                 notifyGallery(context);
-                return false;
+                return uploadFailure(attempt,false,isWebsite?"Geräte-Token erneut verbinden.":"NAS-Zugang erneut speichern.");
             }
         }
         boolean retry = false;
@@ -222,7 +259,7 @@ public final class NasSync {
                 + "FROM uploads WHERE sent=0 ORDER BY rowid", null)) {
             while (rows.moveToNext() && !Thread.currentThread().isInterrupted()) {
                 if (attempted >= 8 || android.os.SystemClock.elapsedRealtime() >= deadline) return true;
-                if (!revision.equals(settings.getString("revision", ""))) return true;
+                if (!revision.equals(settings.getString("revision", ""))) return uploadFailure(attempt,true,"Fotoziel wurde während der Übertragung geändert.");
                 String id = rows.getString(0);
                 try (Cursor live = db(context).rawQuery("SELECT 1 FROM uploads WHERE id=? AND sent=0",
                         new String[]{id})) {
@@ -231,14 +268,16 @@ public final class NasSync {
                 File file = new File(rows.getString(1));
                 if (!file.isFile() || file.length() == 0) {
                     update(context, id, -1, "Lokale Bilddatei fehlt · Bild erneut hinzufügen");
+                    if(attempt!=null)return uploadFailure(attempt,false,"Eine lokale Bilddatei fehlt. Bitte das Bild erneut hinzufügen.");
                     continue;
                 }
                 try {
                     attempted++;
                     destination.upload(rows.getString(2), rows.getString(3), rows.getString(4),
                             rows.getString(5), file);
-                    if (!revision.equals(settings.getString("revision", ""))) return true;
+                    if (!revision.equals(settings.getString("revision", ""))) return uploadFailure(attempt,true,"Fotoziel wurde während der Übertragung geändert.");
                     update(context, id, isWebsite ? 3 : (isFolder ? 2 : 1), "");
+                    if(attempt!=null)attempt.completed++;
                 } catch (WebsiteTarget.SiteError error) {
                     update(context, id, 0, error.hint());
                     if (error.code == 401 || error.code == 403) {
@@ -247,10 +286,11 @@ public final class NasSync {
                                 settings.edit().putBoolean("reauth", true).apply();
                         }
                         notifyGallery(context);
-                        return false;
+                        return uploadFailure(attempt,false,error.hint());
                     }
-                    if (error.code == 0 || error.code == 404 || error.code == 429 || error.code >= 500) return true;
+                    if (error.code == 0 || error.code == 404 || error.code == 429 || error.code >= 500) return uploadFailure(attempt,true,error.hint());
                     update(context, id, -1, error.hint()+" · Foto prüfen und Fotoziel erneut verbinden");
+                    if(attempt!=null)return uploadFailure(attempt,false,error.hint()+" · Foto prüfen und Fotoziel erneut verbinden");
                 } catch (DavTarget.DavError error) {
                     String hint;
                     switch (error.status) {
@@ -262,20 +302,21 @@ public final class NasSync {
                     }
                     update(context, id, 0, hint);
                     retry = true;
+                    if(attempt!=null)return uploadFailure(attempt,true,hint);
                     if (error.status == 401 || error.status == 403 || error.status == 507) break;
                 } catch (SSLException error) {
                     update(context, id, 0, isWebsite ? "HTTPS-Zertifikat der Webseite prüfen" : "NAS-Zertifikat oder HTTPS prüfen");
-                    return true;
+                    return uploadFailure(attempt,true,isWebsite?"HTTPS-Zertifikat der Webseite prüfen.":"NAS-Zertifikat oder HTTPS prüfen.");
                 } catch (SecurityException error) {
                     update(context, id, 0, "Ordnerberechtigung fehlt · neu wählen");
-                    return true;
+                    return uploadFailure(attempt,true,"Ordnerberechtigung fehlt · neu wählen.");
                 } catch (IllegalArgumentException | UnsupportedOperationException error) {
                     update(context, id, 0, "NAS-Ziel prüfen");
-                    return true;
+                    return uploadFailure(attempt,true,"Fotoziel prüfen.");
                 } catch (IOException error) {
                     update(context, id, 0, isWebsite ? "Webseite nicht erreichbar · wartet"
                             : (isFolder ? "Zielordner prüfen · wartet" : "NAS nicht erreichbar · wartet"));
-                    return true;
+                    return uploadFailure(attempt,true,isWebsite?"Webseite nicht erreichbar. Offene Bilder bleiben gespeichert und werden später erneut versucht.":"Fotoziel nicht erreichbar.");
                 }
             }
         }

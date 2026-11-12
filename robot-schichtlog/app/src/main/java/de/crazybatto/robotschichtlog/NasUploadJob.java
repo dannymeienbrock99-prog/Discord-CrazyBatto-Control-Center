@@ -13,6 +13,7 @@ import java.util.concurrent.Future;
 /** All active transfers run serially, even if the safety job and an immediate job overlap. */
 public final class NasUploadJob extends JobService {
     private static final ExecutorService WORKER = Executors.newSingleThreadExecutor();
+    static Future<?> submit(Runnable transfer) { return WORKER.submit(transfer); }
     private final Handler main = new Handler(Looper.getMainLooper());
     private final Map<Integer, Run> jobs = new HashMap<>();
 
@@ -24,7 +25,7 @@ public final class NasUploadJob extends JobService {
         int id = params.getJobId();
         Run run = new Run();
         jobs.put(id, run);
-        run.task = WORKER.submit(() -> {
+        run.task = submit(() -> {
             boolean retry = true;
             try {
                 // Small order snapshots must not wait behind large photo uploads.

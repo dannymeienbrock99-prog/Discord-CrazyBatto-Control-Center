@@ -1,5 +1,20 @@
 # Prüfung dieser Quellcode-Veröffentlichung
 
+Stand: 12. November 2026. **Robot-SchichtLog 1.9.1** ergänzt den sichtbaren Button **ZUM SERVER HOCHLADEN** für den direkten Abgleich gespeicherter Aufträge und Bilder. Desktop 3.7.1, Server 2.3.2, Android-Control und Stream-Deck-Plugin sind gegenüber der vorherigen Veröffentlichung unverändert.
+
+| Neue Prüfung für Robot 1.9.1 | Ergebnis |
+| --- | --- |
+| Signiertes Android-Paket | Version 1.9.1, Versionscode 11, Datenbankversion 6; dieselbe Paketkennung und Signatur wie die vorhandene private App. APK und Signierschlüssel werden nicht veröffentlicht. |
+| Automatisierte Android-Prüfung | **64 Tests bestanden, 0 fehlgeschlagen**, gegen die Klassen des endgültigen APK-Pakets. Die Prüfungen decken den bisherigen Schicht-/Abgleichsablauf sowie den neuen manuellen Upload und seine Oberfläche ab. |
+| Bereinigte Android-Quellen | Alle Javaquellen mit Java-17-Ziel und Android SDK 36 kompiliert. App-Quellbytes stimmen mit dem geprüften privaten Build überein; das Projekt bleibt für compileSdk/targetSdk 35 konfiguriert. |
+| Grenzen der Prüfung | Keine Installation oder echte Übertragung auf dem persönlichen Handy geprüft. Geräteverbindung, serverseitige Freigabe und Internetzugang bleiben notwendig. |
+
+Die unveränderten Komponenten behalten die unten dokumentierten Prüfergebnisse ihres vorherigen Stands. Ihre Tests wurden für diese reine Android-Ergänzung nicht erneut als neue Ergebnisse ausgegeben.
+
+<!-- ROBOT191_VALIDATION_END -->
+
+## Vorheriger geprüfter Stand: Control Center 3.7.1 / Robot 1.9.0
+
 Stand: 12. November 2026. Desktop 3.7.1, Stream-Deck-Plugin 1.0.0, Server 2.3.2, Android-Control 1.0.0, Robot-SchichtLog 1.9.0. Diese Revision verbessert den Robot-Auftragsabgleich, vollständige private Fotogalerien und den Schichtablauf in der Android-App. Die Ergebnisse beziehen sich auf die bereinigte Exportkopie und die ausdrücklich genannten privaten Paketprüfungen.
 
 | Prüfung | Ergebnis |

@@ -167,42 +167,80 @@ final class RobotOrderSync {
             db.setTransactionSuccessful();
         }finally{db.endTransaction();}
     }
-    static synchronized boolean run(Context context){
-        SharedPreferences settings=prefs(context);if(!settings.getBoolean("enabled",false))return false;
-        String pairing=NasSync.galleryRevision(context);if(pairing==null||!NasSync.galleryCurrent(context,pairing)){settings.edit().putString("status","Bitte zuerst den Fotospeicher mit crazybatto.de verbinden.").apply();return false;}
+    static boolean enabled(Context context){return prefs(context).getBoolean("enabled",false);}
+    static void enable(Context context){prefs(context).edit().putBoolean("enabled",true).apply();}
+    static final class Attempt {
+        final boolean retry;
+        final ServerUpload.Step step;
+        Attempt(boolean ok,boolean more,long progress,String details,boolean retry){
+            this.step=new ServerUpload.Step(ok,more,progress,details);this.retry=retry;
+        }
+    }
+    private static Attempt failed(SharedPreferences settings,String message,boolean retry){
+        settings.edit().putString("status",message).apply();
+        return new Attempt(false,false,0,message,retry);
+    }
+    static synchronized boolean run(Context context){return runAttempt(context).retry;}
+    static synchronized Attempt runAttempt(Context context){
+        return runAttempt(context,null);
+    }
+    static synchronized Attempt runAttempt(Context context,String requiredPairing){
+        SharedPreferences settings=prefs(context);
+        if(!settings.getBoolean("enabled",false))return failed(settings,"Auftragsabgleich ist ausgeschaltet.",false);
+        String pairing=NasSync.galleryRevision(context);
+        if(pairing==null||!NasSync.galleryCurrent(context,pairing))return failed(settings,"Bitte zuerst den Fotospeicher mit crazybatto.de verbinden.",false);
+        if(requiredPairing!=null&&!requiredPairing.equals(pairing))return failed(settings,"Serververbindung wurde geändert. Bitte den Upload erneut starten.",false);
         try(DbHelper helper=new DbHelper(context)){
             SQLiteDatabase db=helper.getWritableDatabase();
             if(!pairing.equals(settings.getString("pairing","")))settings.edit().putString("pairing",pairing).putLong("cursor",0).commit();
-            boolean more=false;
+            boolean more=false;long progress=0;
             for(int page=0;page<20;page++){
-                if(Thread.currentThread().isInterrupted())return true;
+                if(Thread.currentThread().isInterrupted())return failed(settings,"Auftragsabgleich unterbrochen. Daten bleiben gespeichert.",true);
                 JSONArray changes=pending(db);long cursor=settings.getLong("cursor",0);
                 JSONObject request=new JSONObject().put("protocol",1).put("cursor",cursor).put("changes",changes);
                 JSONObject result=NasSync.galleryTarget(context,pairing).syncOrders(request);
-                if(!NasSync.galleryCurrent(context,pairing)||!settings.getBoolean("enabled",false))return false;
+                if(!NasSync.galleryCurrent(context,pairing)||!settings.getBoolean("enabled",false))return failed(settings,"Verbindung oder Auftragsfreigabe wurde während der Übertragung geändert.",false);
                 receive(db,result);long next=result.getLong("cursor");if(next<cursor)throw new IOException("Synchronisierungsstand ging zurück.");
                 settings.edit().putLong("cursor",next).putLong("lastSuccess",System.currentTimeMillis()).putString("lastSuccessPairing",pairing).commit();
                 try(Cursor remaining=db.rawQuery("SELECT 1 FROM entries e WHERE sync_dirty=1 AND sync_conflict='' AND NOT EXISTS(SELECT 1 FROM order_sync_errors x WHERE x.entry_id=e.id AND x.local_revision=e.sync_local_revision) LIMIT 1",null)){
-                    more=result.getBoolean("hasMore")||changes.length()>0||remaining.moveToFirst();
+                    more=result.getBoolean("hasMore")||remaining.moveToFirst();
                 }
+                // A response without an acknowledgement must not spin or look like a completed upload.
+                long acknowledged=0;
+                for(int i=0;i<changes.length();i++){
+                    try(Cursor queued=db.rawQuery("SELECT 1 FROM order_sync_queue WHERE mutation_id=?",new String[]{changes.getJSONObject(i).getString("mutationId")})){
+                        if(!queued.moveToFirst())acknowledged++;
+                    }
+                }
+                if(more&&next==cursor&&acknowledged==0)throw new IOException("Der Server hat keine weiteren Aufträge bestätigt. Erneuter Versuch folgt.");
+                progress+=acknowledged+(next>cursor?1:0);
                 if(!more)break;
             }
             long unresolved;try(Cursor count=db.rawQuery("SELECT COUNT(*) FROM entries WHERE sync_conflict<>''",null)){count.moveToFirst();unresolved=count.getLong(0);}
             long blocked;try(Cursor count=db.rawQuery("SELECT COUNT(*) FROM order_sync_errors x JOIN entries e ON e.id=x.entry_id AND e.sync_local_revision=x.local_revision WHERE e.sync_dirty=1",null)){count.moveToFirst();blocked=count.getLong(0);}
-            settings.edit().putString("status",blocked>0?blocked+" Eintrag/Einträge benötigen eine Korrektur im Verlauf. Andere Aufträge werden übertragen."
-                :unresolved>0?unresolved+" Konflikt(e) im Control Center prüfen. Beide Stände bleiben erhalten.":more?"Weitere Aufträge warten auf den nächsten Abgleich.":"Aufträge abgeglichen. Änderungen im Center erscheinen beim nächsten Abgleich.").apply();
-            return more;
+            String message=blocked>0?blocked+" Eintrag/Einträge benötigen eine Korrektur im Verlauf. Andere Aufträge werden übertragen."
+                :unresolved>0?unresolved+" Konflikt(e) im Control Center prüfen. Beide Stände bleiben erhalten.":more?"Weitere Aufträge warten auf den nächsten Abgleich.":"Aufträge abgeglichen. Änderungen im Center erscheinen beim nächsten Abgleich.";
+            settings.edit().putString("status",message).apply();
+            return new Attempt(true,more,progress,message,more);
         }catch(WebsiteTarget.SiteError error){
             if(error.code==401||error.code==403){
                 NasSync.galleryUnauthorized(context,pairing);
-                settings.edit().putString("status","Geräteverbindung abgelaufen oder widerrufen. Unter Fotospeicher erneut mit crazybatto.de verbinden.").apply();return false;
+                return failed(settings,"Geräteverbindung abgelaufen oder widerrufen. Unter Fotospeicher erneut mit crazybatto.de verbinden.",false);
             }
-            settings.edit().putString("status","Serverantwort konnte nicht geprüft werden. Daten bleiben auf dem Handy; erneuter Versuch folgt.").apply();return true;
+            return failed(settings,"Serverantwort konnte nicht geprüft werden. Daten bleiben auf dem Handy; erneuter Versuch folgt.",true);
         }catch(WebsiteTarget.OrderError error){
-            settings.edit().putString("status",error.getMessage()).apply();return error.retryable();
+            return failed(settings,error.getMessage(),error.retryable());
         }catch(Exception error){
             String message=error instanceof IOException?error.getMessage():"Auftragsabgleich nicht möglich. Die Daten bleiben auf dem Handy.";
-            settings.edit().putString("status",message==null?"Auftragsabgleich unterbrochen.":message).apply();return true;
+            return failed(settings,message==null?"Auftragsabgleich unterbrochen.":message,true);
+        }
+    }
+    static boolean hasBlocked(Context context){
+        try(DbHelper helper=new DbHelper(context)){
+            SQLiteDatabase db=helper.getWritableDatabase();errorStore(db);
+            try(Cursor rows=db.rawQuery("SELECT 1 FROM entries e WHERE sync_conflict<>'' OR sync_dirty=1 OR EXISTS(SELECT 1 FROM order_sync_queue q WHERE q.entry_id=e.id) LIMIT 1",null)){
+                return rows.moveToFirst();
+            }
         }
     }
     static void showSettings(Activity activity){
@@ -213,8 +251,8 @@ final class RobotOrderSync {
                 settings.edit().putBoolean("enabled",true).apply();
                 String pairing=NasSync.galleryRevision(activity);
                 if(pairing==null||!NasSync.galleryCurrent(activity,pairing)){NasSync.showSettings(activity);return;}
-                NasSync.retryPending(activity);
-                Toast.makeText(activity,"Abgleich wurde eingeplant. Status hier erneut öffnen.",Toast.LENGTH_LONG).show();
+                ServerUpload.start(activity,false);
+                Toast.makeText(activity,"Serverupload läuft. Fortschritt über „Zum Server hochladen“ ansehen.",Toast.LENGTH_LONG).show();
             }).setNegativeButton("Schließen",null)
             .setNeutralButton(enabled?"Synchronisierung ausschalten":"Fotospeicher einrichten",(d,w)->{
                 if(enabled)settings.edit().putBoolean("enabled",false).apply();

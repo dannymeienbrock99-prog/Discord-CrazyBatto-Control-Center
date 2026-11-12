@@ -1,4 +1,7 @@
 <resources>
+    <item type="id" name="server_upload" />
+    <item type="id" name="server_upload_status" />
+    <item type="id" name="server_upload_details" />
     <item type="id" name="start_robot" />
     <item type="id" name="start_order" />
     <item type="id" name="start_personnel" />
