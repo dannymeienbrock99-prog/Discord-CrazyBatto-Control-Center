@@ -4,7 +4,7 @@ Ein gemeinsames Verwaltungsprojekt für die CRAZY_BATTO-Website, den Discord-Bot
 
 Dieses Repository enthält den bereinigten Quellcode. Zugangsdaten, Betreiber- und Serverkennungen, Datenbanken, Mitgliederinhalte, gespeicherte Verbindungen, private Signierschlüssel und fertige Installer/APKs gehören nicht zum Repository. Die eigenen Windows- und Android-Builds werden privat verteilt; der öffentliche Quellcode ermöglicht ausdrücklich keinen Zugang zur bestehenden Verwaltung.
 
-Stand **Control Center 3.6.1** mit eigenem **Stream-Deck-Plugin 1.0.0**: Mitgliedermeldungen am PC und Handy prüfen, begründete Maßnahmen bestätigen und neue Meldungen sowie Gaming-Setup-Einreichungen per Push erhalten. Spotify und Bot-Musik lassen sich auch per Stream-Deck-Taste steuern. Die Musik-Sitzung endet, sobald ihr Initiator den Sprachkanal verlässt oder wechselt. Spotify-Verknüpfung und Freigaben bleiben an das angemeldete Konto gebunden.
+Stand **Control Center 3.7.0** mit **Website-Aufrufen im Desktop** und eigenem **Stream-Deck-Plugin 1.0.0**: Mitgliedermeldungen am PC und Handy prüfen, begründete Maßnahmen bestätigen und neue Meldungen sowie Gaming-Setup-Einreichungen per Push erhalten. Spotify und Bot-Musik lassen sich auch per Stream-Deck-Taste steuern. Die Musik-Sitzung endet, sobald ihr Initiator den Sprachkanal verlässt oder wechselt. Spotify-Verknüpfung und Freigaben bleiben an das angemeldete Konto gebunden.
 
 ![PC-Hilfe](server/public/showcase/assets/control/dragon-gold-pc-help.png)
 
@@ -25,6 +25,7 @@ Stand **Control Center 3.6.1** mit eigenem **Stream-Deck-Plugin 1.0.0**: Mitglie
 | Gaming-Setups | Mitglieder reichen Komponenten, Beschreibung und Bilder ein. Erst nach Admin-Freigabe erscheinen Beiträge auf Website und im Discord-Forum; Synchronisation kann erneut angestoßen werden. Eigene Setup-Einbettung und neuer Videokopfbereich mit Standbild und barrierearmer Bewegungssteuerung. |
 | Kalender & Events | Geburtstagskalender mit ausdrücklicher Sichtbarkeitsfreigabe, Registrierung über die Website, Geburtstagsnachrichten, Mitgliederzähler und Eventankündigungen mit Ablaufzeit/Countdown. |
 | Musik & Medien | Mediathek, Abspiellisten und Bot-Wiedergabe im Sprachkanal. Verlässt der Initiator den Kanal oder wechselt ihn, stoppt der Bot und trennt die Verbindung; er folgt nicht automatisch in einen anderen Kanal. Getrennte Spotify-Anbindung mit Geräteauswahl, Zufall, Wiederholung und Positionssteuerung. |
+| Website-Aufrufe | Geschützte Desktop-Übersicht für Gäste-Aufrufe heute, geschätzte Tagesbesucher, 7/30/90-Tage-Verlauf, häufig aufgerufene Seiten und Gesamtaufrufe seit Beginn der Erfassung. Nutzt die bestehende Website-Zählung; angemeldete Konten und erkannte Bots sind ausgeschlossen. Besucherwerte verschiedener Tage sind keine eindeutigen Personen über den gesamten Zeitraum. |
 | Stream Deck | Eigenes Plugin für Spotify-Wiedergabe/Geräte/Favoriten, Bot-Musik und alle 33 Control-Center-Bereiche. Lokale, widerrufbare Kopplung; das Center muss auf demselben PC geöffnet sein. |
 | Discord-Verwaltung | Server-Icon/Banner, Kanäle, Rollen, Rollenfarben, Bot-Profil, Ereignisse, Protokolle und Einstellungen über die vorhandene serverseitige Bot-Integration. |
 | Erweiterte Moderation | Unterstützte Discord-AutoMod-Regeln prüfen und konfigurieren; freigegebene Audiodateien über die vorgesehenen Bot-Aktionen versenden. |

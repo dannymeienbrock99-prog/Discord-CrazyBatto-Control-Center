@@ -100,6 +100,12 @@ function operationRequest(operation, body) {
   if (/^(?:members|support|robot)\./.test(operation)) return workspaceOperation(operation, body);
   const empty = () => { if (body !== undefined) fields(body, []); return {}; };
   switch (operation) {
+    case 'visitorStats.get': {
+      if (body !== undefined) fields(body, ['days']);
+      const days = body?.days === undefined ? 30 : body.days;
+      if (![7, 30, 90].includes(days)) fail('Bitte 7, 30 oder 90 Tage auswählen.');
+      return ['GET', `/api/admin/visitor-stats?days=${days}`];
+    }
     case 'discord.capabilities': empty(); return ['GET', '/api/admin/discord-control/capabilities'];
     case 'discord.state': empty(); return ['GET', '/api/admin/discord-control/state'];
     case 'discord.action': {
