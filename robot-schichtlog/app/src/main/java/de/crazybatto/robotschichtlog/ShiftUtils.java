@@ -21,6 +21,19 @@ public final class ShiftUtils {
         return NIGHT;
     }
 
+    /** A sign-in during the last 15 minutes before 06/14/22 belongs to the next shift. */
+    public static String getShiftForSignIn(long timestamp) {
+        return getShift(signInShiftWindow(timestamp)[0]);
+    }
+
+    public static long[] signInShiftWindow(long timestamp) {
+        long[] current = currentShiftWindow(timestamp);
+        if (timestamp >= current[1] - 15L * 60L * 1000L) {
+            return currentShiftWindow(current[1]);
+        }
+        return current;
+    }
+
     public static String formatDateTime(long timestamp) {
         return new SimpleDateFormat("dd.MM.yyyy · HH:mm", Locale.GERMANY).format(new Date(timestamp));
     }

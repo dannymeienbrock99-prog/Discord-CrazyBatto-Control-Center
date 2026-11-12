@@ -159,6 +159,14 @@ public final class NasSync {
         }
     }
 
+    static String queueSummary(Context context) {
+        try (Cursor rows=db(context).rawQuery("SELECT SUM(CASE WHEN sent<0 THEN 1 ELSE 0 END),SUM(CASE WHEN sent=0 THEN 1 ELSE 0 END),SUM(CASE WHEN sent=3 THEN 1 ELSE 0 END) FROM uploads",null)) {
+            rows.moveToFirst();
+            return rows.getLong(1)+" Fotos warten · "+rows.getLong(2)+" Fotos auf crazybatto.de bestätigt"
+                    +(rows.getLong(0)>0?" · "+rows.getLong(0)+" Fotos prüfen (Details am Bild)":"");
+        }
+    }
+
     /** Android persists a periodic safety job; the one-shot job sends new photos promptly. */
     public static synchronized void schedule(Context context) {
         if (!configured(prefs(context)) || prefs(context).getBoolean("reauth", false)) return;
@@ -208,9 +216,12 @@ public final class NasSync {
             }
         }
         boolean retry = false;
+        int attempted = 0;
+        long deadline = android.os.SystemClock.elapsedRealtime() + 90_000;
         try (Cursor rows = db(context).rawQuery("SELECT id,file,day,article,order_no,remote_file "
                 + "FROM uploads WHERE sent=0 ORDER BY rowid", null)) {
             while (rows.moveToNext() && !Thread.currentThread().isInterrupted()) {
+                if (attempted >= 8 || android.os.SystemClock.elapsedRealtime() >= deadline) return true;
                 if (!revision.equals(settings.getString("revision", ""))) return true;
                 String id = rows.getString(0);
                 try (Cursor live = db(context).rawQuery("SELECT 1 FROM uploads WHERE id=? AND sent=0",
@@ -219,10 +230,11 @@ public final class NasSync {
                 }
                 File file = new File(rows.getString(1));
                 if (!file.isFile() || file.length() == 0) {
-                    update(context, id, 0, "Lokale Bilddatei fehlt");
+                    update(context, id, -1, "Lokale Bilddatei fehlt · Bild erneut hinzufügen");
                     continue;
                 }
                 try {
+                    attempted++;
                     destination.upload(rows.getString(2), rows.getString(3), rows.getString(4),
                             rows.getString(5), file);
                     if (!revision.equals(settings.getString("revision", ""))) return true;
@@ -238,6 +250,7 @@ public final class NasSync {
                         return false;
                     }
                     if (error.code == 0 || error.code == 404 || error.code == 429 || error.code >= 500) return true;
+                    update(context, id, -1, error.hint()+" · Foto prüfen und Fotoziel erneut verbinden");
                 } catch (DavTarget.DavError error) {
                     String hint;
                     switch (error.status) {
@@ -266,7 +279,7 @@ public final class NasSync {
                 }
             }
         }
-        return retry;
+        return retry || Thread.currentThread().isInterrupted();
     }
 
     private static void update(Context context, String id, int sent, String detail) {
@@ -332,11 +345,14 @@ public final class NasSync {
     private static void restartQueue(Context context) {
         ContentValues values = new ContentValues();
         values.put("detail", "");
-        db(context).update("uploads", values, "sent=0", null);
+        values.put("sent", 0);
+        db(context).update("uploads", values, "sent<=0", null);
         context.getSystemService(JobScheduler.class).cancel(JOB);
         schedule(context);
         notifyGallery(context);
     }
+
+    static void retryPending(Context context) { restartQueue(context); }
 
     public static void onFolderResult(Activity activity, int resultCode, Intent data) {
         if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null) return;
@@ -394,7 +410,7 @@ public final class NasSync {
         else if (!settings.getString("tree", "").isEmpty()) active = "Aktiv: " + settings.getString("label", "NAS-Ordner");
         else if (!settings.getString("url", "").isEmpty()) active = "Aktiv: WebDAV";
         TextView summary = new TextView(activity);
-        summary.setText(active + "\n\nErstelle auf deiner Webseite einen Gerätecode. Gib dort den Fotoabruf frei, "
+        summary.setText(active + "\n" + queueSummary(activity) + "\n\nErstelle auf deiner Webseite einen Gerätecode. Gib dort den Fotoabruf frei, "
                 + "wenn dieses Handy vorhandene Auftragsfotos ansehen soll. Nach dem Verbinden werden neue "
                 + "und noch offene Fotos privat an crazybatto.de übertragen.");
         layout.addView(summary);
@@ -409,6 +425,11 @@ public final class NasSync {
             }
         });
         layout.addView(portal);
+        if(configured(settings)) {
+            Button retry=new Button(activity);retry.setText("Wartende Fotos erneut übertragen");retry.setAllCaps(false);
+            retry.setOnClickListener(v->{restartQueue(activity);Toast.makeText(activity,"Fotoupload erneut eingeplant. Bildstatus nach dem Abgleich prüfen.",Toast.LENGTH_LONG).show();});
+            layout.addView(retry);
+        }
         EditText token = field(activity, layout, "Geräte-Token",
                 InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD, "");
         token.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);

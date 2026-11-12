@@ -4,7 +4,7 @@ Ein gemeinsames Verwaltungsprojekt für die CRAZY_BATTO-Website, den Discord-Bot
 
 Dieses Repository enthält den bereinigten Quellcode. Zugangsdaten, Betreiber- und Serverkennungen, Datenbanken, Mitgliederinhalte, gespeicherte Verbindungen, private Signierschlüssel und fertige Installer/APKs gehören nicht zum Repository. Die eigenen Windows- und Android-Builds werden privat verteilt; der öffentliche Quellcode ermöglicht ausdrücklich keinen Zugang zur bestehenden Verwaltung.
 
-Stand **Control Center 3.7.0** mit **Website-Aufrufen im Desktop** und eigenem **Stream-Deck-Plugin 1.0.0**: Mitgliedermeldungen am PC und Handy prüfen, begründete Maßnahmen bestätigen und neue Meldungen sowie Gaming-Setup-Einreichungen per Push erhalten. Spotify und Bot-Musik lassen sich auch per Stream-Deck-Taste steuern. Die Musik-Sitzung endet, sobald ihr Initiator den Sprachkanal verlässt oder wechselt. Spotify-Verknüpfung und Freigaben bleiben an das angemeldete Konto gebunden.
+Stand **Control Center 3.7.1**, **Robot-SchichtLog 1.9.0** und eigenes **Stream-Deck-Plugin 1.0.0**: Aufträge und Bilder privat zwischen Handy und Center abgleichen, Zwischenstände speichern, Schichten abschließen und Aufträge als Textdatei teilen. Website-Aufrufe, Mitgliedermeldungen, Freigaben, Spotify und Bot-Musik bleiben in derselben Verwaltung verfügbar. Die Musik-Sitzung endet, sobald ihr Initiator den Sprachkanal verlässt oder wechselt. Spotify-Verknüpfung und Freigaben bleiben an das angemeldete Konto gebunden.
 
 ![PC-Hilfe](server/public/showcase/assets/control/dragon-gold-pc-help.png)
 
@@ -32,7 +32,7 @@ Stand **Control Center 3.7.0** mit **Website-Aufrufen im Desktop** und eigenem *
 | Verbindungsverwaltung | SFTP-Dateimanager mit lokalen/entfernten Verzeichnissen, Upload/Download und gespeicherten Profilen. Zugangsdaten werden lokal geschützt; der SSH-Hostschlüssel wird geprüft. WinSCP-Import übernimmt freigegebene Verbindungsmetadaten. |
 | Lokales Discord | Eigene BetterDiscord-Brücke für kompatible, bereits lokal installierte Erweiterungen und Themen; deren Status und Einstellungen lassen sich im Center verwalten. Fremde Plugins sind nicht mitgeliefert. |
 | Android-Control | Persönliche Verwaltungsoberfläche für Mitgliederfreigaben, Meldungen mit Moderation, Gaming-Setup-Prüfung und Support-/Auftragsansichten. Neue Meldungen und Setup-Einreichungen erhalten dauerhafte Benachrichtigungsbelege. Die App bestätigt zunächst, welche Hinweisarten ihr aktiver Hintergrunddienst versteht; bis dahin bleiben neue Hinweise vorgemerkt. Versand- und Entfernungsbelege bleiben auch nach Geräteabmeldung nachvollziehbar. Push-Anmeldung, ausdrückliche Erneuerung veralteter Geräteabos und Testbenachrichtigung; Android-Kanal mit Ton. |
-| Robot-SchichtLog | Android-Projekt mit Schicht-/Auftragsaufzeichnungen und Bildern. Optionale Verbindung zum Center zum Prüfen, Nacharbeiten und Löschen synchronisierter Aufträge, einschließlich Konflikt- und Wiederholungsbehandlung. Lokale Daten werden erst nach aktivierter Verbindung synchronisiert. |
+| Robot-SchichtLog | Aufträge starten; Artikelnummern einschließlich HE-Vorschlägen wiederverwenden; Zwischenstände speichern; mit angegebener Endzeit die Schicht beenden und den Auftrag für die nächste Schicht offen lassen. Frühzeitige Anmeldung berücksichtigt die nächste Schicht ab 15 Minuten vor Beginn. Geordnete Verlaufsdetails und Teilen als TXT-Datei. Nach Geräteverbindung, Serverfreigabe und aktivierter Synchronisierung erscheinen echte Einträge samt privaten Bildern im Center. Bilder werden vollständig seitenweise nachgeladen; Nacharbeit, Papierkorb, Konfliktprüfung und eindeutiger Übertragungsstatus sind enthalten. |
 
 ## Was von der Einrichtung abhängt
 
@@ -45,6 +45,7 @@ Stand **Control Center 3.7.0** mit **Website-Aufrufen im Desktop** und eigenem *
 - Nach einem Update die Handyseite neu laden. Eine Geräteanmeldung ist erst aktiv, wenn Browser und Server sie bestätigen. Bei abgelaufenen Browserabos erneuert der ausdrückliche Aktivieren-Klick die Anmeldung; ein bloßer Seitenbesuch meldet kein Gerät automatisch an.
 - Externe Konten und Dienste, insbesondere Discord, E-Mail-Anmeldung, Medienablage und optionale Spotify-Anbindung, müssen privat eingerichtet werden. Es sind keine produktiven Konten vorkonfiguriert.
 - PC-Aufträge enthalten einen Preisvorschlag und eine Freigabe; dieses Projekt enthält keinen automatischen Zahlungsabzug oder Zahlungsdienst.
+- Robot-SchichtLog benötigt eine eigene Geräteverbindung zum Fotospeicher, eine ausdrückliche Auftragsfreigabe im Center und den aktivierten Abgleich in der Handy-App. Android kann Hintergrundübertragungen durch Energiesparen oder fehlendes Netz verzögern. „Schicht beenden / Abmelden“ beendet die Schicht; „Auftrag beenden“ schließt den gesamten Auftrag. Näheres steht in der [Robot-Anleitung](robot-schichtlog/README.md).
 
 ## Projektaufbau
 

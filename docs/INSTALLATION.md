@@ -48,7 +48,16 @@ Nach dem Serverupdate die Handyverwaltung einmal öffnen, damit der aktive Benac
 
 `robot-schichtlog` separat in Android Studio öffnen; SDK 35 und JDK 17 verwenden. `gradle :app:assembleDebug` erstellt einen lokalen Build. Für Updates derselben installierten App wird derselbe private Signierschlüssel benötigt.
 
-Die Website-Anbindung in der App bewusst aktivieren und anmelden. Erst dann werden die vorgesehenen Aufträge synchronisiert. Im Center die Auftragsübersicht öffnen; bei konkurrierenden Änderungen die aktuelle Version laden und entscheiden. NAS/WebDAV-/Ordnerziele sind eigene optionale Verbindungen und nicht im Repository vorkonfiguriert.
+Die Verbindung wird für jedes Handy einzeln eingerichtet:
+
+1. In Robot-SchichtLog unter **Fotospeicher** einen Gerätecode über die private Website-Verwaltung anlegen und anschließend in der App verbinden. Der Gerätename beschreibt das Handy; der geheime Code gehört ausschließlich ins Geräte-Token-Feld.
+2. Im Control Center unter **Robot SchichtLog → Geräte** genau dieses Handy für die Auftragssynchronisierung freigeben. Eine Freigabe eines anderen Handys genügt nicht.
+3. In der Handy-App unter **Control Center · Aufträge** die Synchronisierung einschalten und **Jetzt abgleichen** wählen. Dort stehen wartende Einträge, Fotozustand und letzter erfolgreicher Abgleich. Eine fehlende Freigabe wird ausdrücklich angezeigt.
+4. Im Center **Aktive Einträge** öffnen; **Gelöschte Einträge** ist der separate Papierkorb. Auftragsdetails zeigen die zugeordneten Bilder. **Weitere Fotos laden** lädt bei größeren Aufträgen die Folgeseiten.
+
+Zwischenstände aktualisieren denselben Schichteintrag. **Schicht beenden / Abmelden** speichert die eingegebene Schichtendzeit; der Auftrag bleibt für die nächste Anmeldung offen. Erst **Auftrag beenden** schließt ihn vollständig. Bei konkurrierenden Änderungen im Center die aktuelle Version laden und entscheiden. Ein bereits geöffnetes veraltetes Handyformular darf eine bestätigte Centerkorrektur nicht überschreiben.
+
+Auftragsübertragung und Fotos haben getrennte Warteschlangen. Ohne Netz bleiben die Daten lokal; der Hintergrunddienst setzt die Übertragung später fort. Android-Energiesparen kann das verzögern. Einzelne fehlerhafte Bilder oder ungültige Altangaben werden mit Hinweis zurückgehalten, damit andere Datensätze weiter übertragen werden. Nach einer Korrektur kann die Übertragung ausdrücklich erneut angestoßen werden. NAS/WebDAV-/Ordnerziele sind optionale eigene Verbindungen und nicht im Repository vorkonfiguriert; für den Center-Abgleich muss der Website-Fotospeicher gewählt sein.
 
 ## Prüfung vor privater Nutzung
 

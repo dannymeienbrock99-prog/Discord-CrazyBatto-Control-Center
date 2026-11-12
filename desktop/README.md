@@ -1,6 +1,8 @@
-# Crazy_Batto Control Center 3.7.0
+# Crazy_Batto Control Center 3.7.1
 
 Windows Electron app with German React UI: existing crazybatto.de admin account, birthdays, music, authenticated Discord administration extension, encrypted profiles and SFTP. Version 3.5 adds private PC-support requests with reviewed price offers, website-member approvals and synchronized Robot SchichtLog records with reversible deletion and explicit conflict resolution.
+
+Version 3.7.1 improves Robot SchichtLog: device-specific setup guidance, explicit active/deleted record views, and private photos loaded in pages of 40 until the complete gallery is available. Photo responses are checked against the selected record and revision; delayed pages cannot overwrite an edited draft or another order. Pairing and permission guidance correspond to Robot SchichtLog 1.9.0. The desktop only displays real synchronized records and never turns a photo into an invented order.
 
 Version 3.7.0 adds **Website-Aufrufe**, an administrator-only view of the existing website visitor statistics: today's guest page views and estimated daily visitors, 7/30/90-day trends, most viewed pages and cumulative views since collection began. It uses the existing authenticated API without adding tracking. Only the public pages already included in the website counter are covered; authenticated members and recognized bots are excluded. Daily visitor estimates are not unique people across a longer period. Loading, unavailable, incomplete and empty data are distinguished, and account changes discard pending responses.
 

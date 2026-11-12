@@ -47,13 +47,25 @@ final class WebsiteTarget {
         try{
             try(OutputStream out=request.getOutputStream()){out.write(bytes);}
             int code=request.getResponseCode();
-            if(code==403)throw new IOException("Auftragssynchronisierung im Control Center für dieses Handy freigeben.");
             if(code==401)throw new SiteError(code);
-            if(code!=200)throw new IOException("Auftragssynchronisierung meldet HTTP "+code+". Daten bleiben auf dem Handy.");
+            if(code!=200)throw new OrderError(code);
             if(!"application/json".equals(mediaType(request)))throw new IOException("Ungültige Synchronisierungsantwort.");
             try(InputStream in=request.getInputStream()){return new JSONObject(readJson(in,4*1024*1024));}
             catch(JSONException invalid){throw new IOException("Ungültige Synchronisierungsantwort.");}
         }finally{request.disconnect();}
+    }
+
+    static final class OrderError extends IOException {
+        final int code;
+        OrderError(int code) {
+            super(code==403 ? "Auftragszugriff für dieses Handy im Control Center prüfen: Robot SchichtLog → Geräte → Aufträge freigeben."
+                : code==400 || code==413 || code==422 ? "Ein Auftragsstand wurde abgelehnt (HTTP "+code+"). Angaben im Verlauf prüfen; deine Daten bleiben lokal."
+                : code==409 ? "Ein Auftrag gehört zu einem anderen Änderungsstand. Gerätezuordnung im Control Center prüfen."
+                : code==404 || code==405 ? "Der Server unterstützt den Auftragsabgleich noch nicht. Control Center und Server aktualisieren."
+                : "Auftragsabgleich vorübergehend nicht erreichbar (HTTP "+code+"). Wird erneut versucht.");
+            this.code=code;
+        }
+        boolean retryable(){return code==408 || code==429 || code>=500;}
     }
 
     private HttpsURLConnection open(String method, String suffix) throws IOException {

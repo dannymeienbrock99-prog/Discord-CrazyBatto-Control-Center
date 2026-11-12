@@ -146,6 +146,14 @@ final class OrderPhotos {
         sync(context, null);
     }
 
+    // A killed app may have committed an attachment before enqueueing its upload.
+    // Reconcile on the same serial import worker before a background transfer too.
+    static void recoverForUpload(Context context) throws Exception {
+        java.util.concurrent.Future<?> pending = IMPORTS.submit(() -> syncNow(context.getApplicationContext(), null));
+        try { pending.get(); }
+        catch (InterruptedException stopped) { pending.cancel(true); throw stopped; }
+    }
+
     static void syncEntry(Context context, long id) {
         sync(context, id);
     }
@@ -173,7 +181,10 @@ final class OrderPhotos {
 
     private static void sync(Context context, Long entryId) {
         Context app = context.getApplicationContext();
-        IMPORTS.execute(() -> {
+        IMPORTS.execute(() -> syncNow(app, entryId));
+    }
+
+    private static void syncNow(Context app, Long entryId) {
             try (DbHelper db = new DbHelper(app)) {
                 List<Photo> photos = entryId == null ? query(db, "", null)
                         : query(db, " AND a.entry_id=?", new String[]{entryId.toString()});
@@ -187,6 +198,7 @@ final class OrderPhotos {
                     }
                 }
                 for (Photo photo : photos) {
+                    if (Thread.currentThread().isInterrupted()) return;
                     try {
                         File copy = privateCopy(app, photo.uri);
                         if (copy == null) {
@@ -207,7 +219,6 @@ final class OrderPhotos {
                     }
                 }
             }
-        });
     }
 
     private OrderPhotos() {}

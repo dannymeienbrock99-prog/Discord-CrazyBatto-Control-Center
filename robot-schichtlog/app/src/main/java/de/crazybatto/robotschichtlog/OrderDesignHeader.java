@@ -73,7 +73,7 @@ final class OrderDesignHeader {
     }
 
     private String personnelLabel() {
-        return job.paused ? "Letzte Personalnummer" : "Personalnummer";
+        return job.paused || job.signedOut ? "Letzte Personalnummer" : "Personalnummer";
     }
 
     private void addWeldingHero(LinearLayout parent) {
@@ -160,7 +160,8 @@ final class OrderDesignHeader {
     }
 
     private void refreshClock(long time) {
-        String shift = ShiftUtils.getShift(time);
+        String shift = job == null || job.signedOut ? ShiftUtils.getShiftForSignIn(time)
+                : job.sessionShift == null || job.sessionShift.isEmpty() ? ShiftUtils.getShift(time) : job.sessionShift;
         shiftLabel.setText(job == null || theme == AppDesign.SCHWEISSLICHT ? shift : shift + " · Roboter " + job.robot);
         if (startLabel != null) {
             String since = "Start " + ShiftUtils.formatDateTime(job.startedAt) + " · " + duration(job.startedAt, time);
@@ -170,7 +171,7 @@ final class OrderDesignHeader {
     }
 
     private String state() {
-        return job.paused ? "Auftrag unterbrochen" : "Aktiver Auftrag";
+        return job.signedOut ? "Abgemeldet · Auftrag offen" : job.paused ? "Auftrag unterbrochen" : "Aktiver Auftrag";
     }
 
     private LinearLayout marker(TextView label) {

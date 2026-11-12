@@ -7,6 +7,7 @@ import {Readable} from 'node:stream';
 import {randomUUID,randomBytes,createHash} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {handleRobotOrders,robotOrderTesting} from '../src/robot-orders.mjs';
+import {handleRobotSchichtlog} from '../src/robot-schichtlog.mjs';
 
 const sample=()=>({robot:1,orderNumber:'A-100',articleNumber:'Artikel',programInfo:'P2',missingParts:'',quantity:4,timestamp:1790000000000,shift:'Früh',eventType:'Kein Ereignis',important:false,note:'Notiz',handoverNote:'',startedAt:0,endedAt:0,source:'Eintrag',personnelNumber:'0007'});
 function fixture(t){
@@ -23,7 +24,12 @@ function fixture(t){
  const change=(overrides={})=>({id:randomUUID(),mutationId:randomUUID(),baseRevision:0,deleted:false,data:sample(),...overrides});
  const sync=changes=>req('POST','/api/robot-schichtlog/orders/sync',{protocol:1,cursor:0,changes},'device');
  const grant=()=>req('PATCH','/api/admin/robot/devices/'+device,{canSync:true});
- return {db,accountDb,service,store,owner,device,req,sync,change,grant,revoke:()=>{allowed=false;}};
+ async function photoUpload(id,image,order,article){
+   const request=Readable.from([image]);request.method='POST';request.headers={authorization:'Bearer '+token,'content-type':'image/png','content-length':String(image.length),'x-photo-id':id,'x-photo-day':'2026-11-12','x-photo-sha256':createHash('sha256').update(image).digest('hex'),'x-photo-order':Buffer.from(order).toString('base64url'),'x-photo-article':Buffer.from(article).toString('base64url')};
+   const result={};const response={headersSent:false,setHeader(){},writeHead(status){this.headersSent=true;result.status=status;},end(bytes){result.body=bytes?JSON.parse(String(bytes)):null;},destroy(){throw Error('Unexpected destroy');}};
+   await handleRobotSchichtlog(service,request,response,new URL('https://crazybatto.de/api/robot-schichtlog/photos'));return result;
+ }
+ return {db,accountDb,service,store,owner,device,req,sync,change,grant,photoUpload,revoke:()=>{allowed=false;}};
 }
 test('existing photo devices cannot silently sync; explicit operator grant is required',async t=>{
  const f=fixture(t),entry=f.change();assert.equal((await f.sync([entry])).status,403);assert.equal((await f.req('GET','/api/admin/robot/orders',undefined,'stranger')).status,401);
@@ -83,4 +89,37 @@ test('search treats percent and underscore literally and device revocation inval
  assert.equal((await f.req('GET','/api/admin/robot/orders?q=A-100')).body.total,1);
  assert.equal((await f.req('GET','/api/admin/robot/orders?q=%25')).body.total,0);
  f.db.prepare('UPDATE devices SET revoked=? WHERE id=?').run(Date.now(),f.device);assert.equal((await f.sync([])).status,401);
+});
+
+test('all photos paginate without loss and cursors cannot cross order scopes',async t=>{
+ const f=fixture(t);await f.grant();const entry=f.change();await f.sync([entry]);
+ const insert=f.db.prepare('INSERT INTO photos(id,day,article,order_no,sha,bytes,mime,file,ready,created) VALUES(?,?,?,?,?,?,?,?,?,?)');
+ const expected=[];for(let i=0;i<87;i++){const id=randomUUID();expected.push(id);insert.run(id,'2026-11-12',' Artikel ',' A-100 ','0'.repeat(64),24,'image/png',id+'.png',1,1000+i);}
+ const unrelated=randomUUID();insert.run(unrelated,'2026-11-12','Artikel','Other','0'.repeat(64),24,'image/png',unrelated+'.png',1,1000);
+ const endpoint='/api/admin/robot/orders/'+entry.id;let cursor=null;const seen=[];
+ do{const response=await f.req('GET',endpoint+(cursor?'?photoCursor='+cursor:''));assert.equal(response.status,200);const detail=response.body;assert.equal(detail.order.photoCount,87);assert.equal(detail.order.revision,1);assert.ok(detail.photos.length<=40);seen.push(...detail.photos.map(p=>p.id));cursor=detail.photosNextCursor;}while(cursor);
+ assert.deepEqual(seen,expected.reverse());assert.equal(new Set(seen).size,87);
+ for(const suffix of ['?photoCursor='+unrelated,'?photoCursor=bad','?photoCursor=','?extra=1','?photoCursor='+seen[0]+'&photoCursor='+seen[1]])assert.equal((await f.req('GET',endpoint+suffix)).status,400);
+});
+
+test('durable real photo uploads associate before and after order sync, retry and rename',async t=>{
+ const f=fixture(t),image=Buffer.from('89504e470d0a1a0a0000000d494844520000000100000001','hex'),id=randomUUID();
+ assert.equal((await f.photoUpload(id,image,'\u00a0A-100\u3000',' Artikel ')).status,201);
+ assert.equal((await f.photoUpload(id,image,'\u00a0A-100\u3000',' Artikel ')).status,200);
+ const entry=f.change();assert.equal((await f.sync([entry])).status,403);await f.grant();await f.sync([entry]);
+ const endpoint='/api/admin/robot/orders/'+entry.id;
+ assert.equal((await f.req('GET',endpoint)).body.photos[0].id,id);
+ await f.req('PATCH',endpoint,{expectedRevision:1,changes:{orderNumber:'Umbenannt',articleNumber:'Neu'}});
+ const second=randomUUID();assert.equal((await f.photoUpload(second,image,'Umbenannt','Neu')).status,201);
+ const detail=(await f.req('GET',endpoint)).body;assert.equal(detail.order.photoCount,2);assert.equal(detail.photosNextCursor,null);
+ assert.deepEqual(new Set(detail.photos.map(p=>p.id)),new Set([id,second]));
+ assert.equal((await f.req('GET','/api/admin/robot/photos/'+id+'/preview')).body.dataUrl,'data:image/png;base64,'+image.toString('base64'));
+ assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM photos WHERE ready=1').get().n,2);
+});
+
+test('device names which resemble a secret are redacted in list and order views',async t=>{
+ const f=fixture(t);await f.grant();const entry=f.change();await f.sync([entry]);const synthetic='x'.repeat(43);
+ f.db.prepare('UPDATE devices SET label=? WHERE id=?').run(synthetic,f.device);
+ const list=(await f.req('GET','/api/admin/robot/orders')).body;assert.equal(list.devices[0].label,'Handy · Gerätenamen prüfen');assert.equal(list.orders[0].deviceLabel,'Handy · Gerätenamen prüfen');
+ assert.ok(!JSON.stringify(list).includes(synthetic));assert.equal(f.db.prepare('SELECT label FROM devices WHERE id=?').get(f.device).label,synthetic);
 });

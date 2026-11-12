@@ -15,6 +15,7 @@
     <item type="id" name="job_important" />
     <item type="id" name="job_note" />
     <item type="id" name="job_handover" />
+    <item type="id" name="job_shift_end" />
     <item type="id" name="history_search" />
     <item type="id" name="history_date" />
     <item type="id" name="history_shift" />

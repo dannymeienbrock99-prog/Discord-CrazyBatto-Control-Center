@@ -15,6 +15,10 @@ const API = '/api/robot-schichtlog/photos';
 const stores = new WeakMap();
 const hash = input => createHash('sha256').update(input).digest('hex');
 const fail = (code, message) => { throw Object.assign(new Error(message), { status: code, robotError: true }); };
+const KEY_AS_LABEL=/^[A-Za-z0-9_-]{43}$/;
+export const robotDeviceLabel=value=>KEY_AS_LABEL.test(String(value).trim())?'Handy · Gerätenamen prüfen':value;
+// SQLite's default trim only removes ASCII spaces; order data uses JS trim.
+export const photoIdentifier=column=>'trim('+column+',char(9,10,11,12,13,32,160,5760,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8232,8233,8239,8287,12288,65279))';
 
 function privateDir(directory) {
   try { fs.mkdirSync(directory, { mode: 0o700 }); } catch (err) { if (err.code !== 'EEXIST') throw err; }
@@ -200,7 +204,7 @@ async function readOrderPhotos(service,store,req,res,url,photoId) {
   const article=decodeField(req.headers['x-photo-article'],true), order=decodeField(req.headers['x-photo-order'],false);
   if(req.method !== 'GET') fail(405,'Diese Adresse unterstützt nur den Fotoabruf.');
   res.setHeader('Vary','Authorization, X-Photo-Order, X-Photo-Article');
-  const scoped='ready=1 AND order_no=? AND article=?', args=[order,article];
+  const scoped='ready=1 AND '+photoIdentifier('order_no')+'=? AND '+photoIdentifier('article')+'=?', args=[order.trim(),article.trim()];
   if (photoId) {
     const photo=store.db.prepare('SELECT file,bytes,sha,mime FROM photos WHERE '+scoped+' AND id=?').get(...args,photoId);
     if(!photo) fail(404,'Foto nicht gefunden.');
@@ -257,7 +261,7 @@ export async function handleRobotSchichtlog(service,req,res,url,apkFile='/app/pr
     const store=openStore(service), db=store.db;
     if((url.pathname===ROOT || url.pathname===ROOT+'/') && req.method==='GET'){
       const page=Math.max(0,Math.min(1000000,Number(url.searchParams.get('page'))||0))|0;
-      const devices=db.prepare('SELECT id,label,created,revoked,can_read FROM devices WHERE owner=? ORDER BY (revoked IS NULL) DESC,created DESC LIMIT 100').all(user.id);
+      const devices=db.prepare('SELECT id,label,created,revoked,can_read FROM devices WHERE owner=? ORDER BY (revoked IS NULL) DESC,created DESC LIMIT 100').all(user.id).map(device=>({...device,label:robotDeviceLabel(device.label)}));
       const filters={day:url.searchParams.get('day')||'',article:url.searchParams.get('article')||'',order:url.searchParams.get('order')||''};
       if(filters.day && !DAY.test(filters.day)) fail(400,'Ungültiges Datum.');
       const columns={day:'day',article:'article',order:'order_no'}, where=['ready=1'], values=[];
@@ -273,6 +277,7 @@ export async function handleRobotSchichtlog(service,req,res,url,apkFile='/app/pr
       const body=await jsonFields(req); recheck();
       const label=typeof body?.label==='string' ? body.label.trim() : '';
       if(!label || label.length>80 || /[\p{Cc}]/u.test(label)) fail(400,'Bitte einen Gerätenamen mit höchstens 80 Zeichen eingeben.');
+      if(KEY_AS_LABEL.test(label))fail(400,'Als Gerätenamen bitte z. B. „Mein Handy“ eingeben, keinen Geräteschlüssel.');
       if(body.canRead!==undefined && typeof body.canRead!=='boolean') fail(400,'Ungültige Bildfreigabe.');
       if(db.prepare('SELECT COUNT(*) AS num FROM devices WHERE owner=? AND revoked IS NULL').get(user.id).num>=50) fail(429,'Höchstens 50 aktive Geräte.');
       const key=randomBytes(32).toString('base64url'), id=randomUUID();

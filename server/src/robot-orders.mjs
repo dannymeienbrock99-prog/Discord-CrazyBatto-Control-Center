@@ -2,11 +2,14 @@ import fs from 'node:fs/promises';
 import { constants } from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
-import { openStore, checkDevice } from './robot-schichtlog.mjs';
+import { openStore, checkDevice, robotDeviceLabel, photoIdentifier } from './robot-schichtlog.mjs';
 
 const UUID=/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
 const MAX_BODY=256*1024, MAX_IMAGE=8*1024*1024;
 const initialized=new WeakSet();
+// Retain historical raw metadata for idempotent upload retries, but compare the
+// same trimmed identifiers used by order edits (including existing photo rows).
+const photoMatch='p.ready=1 AND EXISTS(SELECT 1 FROM robot_order_photo_keys k WHERE k.order_id=? AND k.order_no='+photoIdentifier('p.order_no')+' AND k.article='+photoIdentifier('p.article')+')';
 const limits={orderNumber:256,articleNumber:256,programInfo:2000,missingParts:4000,shift:80,eventType:120,note:8000,handoverNote:8000,source:120,personnelNumber:80};
 const numbers={robot:[1,999],quantity:[0,100000000],timestamp:[1,4102444800000],startedAt:[0,4102444800000],endedAt:[0,4102444800000]};
 const fields=[...Object.keys(limits),...Object.keys(numbers),'important'];
@@ -56,12 +59,12 @@ function storeFor(service){
 function orderView(db,row){
   if(!row)return null;const value=JSON.parse(row.data);
   return {...value,id:row.id,revision:row.revision,deleted:!!row.deleted,updatedAt:row.updated_at,
-    deviceLabel:db.prepare('SELECT label FROM devices WHERE id=?').get(row.device_id)?.label||'Nicht mehr verbundenes Handy',
+    deviceLabel:robotDeviceLabel(db.prepare('SELECT label FROM devices WHERE id=?').get(row.device_id)?.label||'Nicht mehr verbundenes Handy'),
     resolvedMutations:db.prepare('SELECT mutation_id FROM robot_order_conflicts WHERE order_id=? AND resolved_at IS NOT NULL ORDER BY resolved_at DESC LIMIT 100').all(row.id).map(c=>c.mutation_id),
-    photoCount:db.prepare('SELECT COUNT(*) AS n FROM photos p WHERE p.ready=1 AND EXISTS(SELECT 1 FROM robot_order_photo_keys k WHERE k.order_id=? AND k.order_no=p.order_no AND k.article=p.article)').get(row.id).n};
+    photoCount:db.prepare('SELECT COUNT(*) AS n FROM photos p WHERE '+photoMatch).get(row.id).n};
 }
 const rowFor=(db,id,owner)=>db.prepare('SELECT * FROM robot_orders WHERE id=? AND owner=?').get(id,owner);
-const deviceView=row=>({id:row.id,label:row.label,canSync:!!row.can_sync,revoked:row.revoked,lastSyncAt:row.last_sync_at||null});
+const deviceView=row=>({id:row.id,label:robotDeviceLabel(row.label),canSync:!!row.can_sync,revoked:row.revoked,lastSyncAt:row.last_sync_at||null});
 function write(db,row,owner,deviceId,id,value,deleted,now){
   const rev=(row?.revision||0)+1;
   db.prepare(`INSERT INTO robot_orders(id,owner,device_id,revision,data,deleted,updated_at) VALUES(?,?,?,?,?,?,?)
@@ -144,7 +147,17 @@ async function photoBytes(store,photo,maximum){
     if(count!==photo.bytes||before.size!==after.size||before.mtimeMs!==after.mtimeMs||sha(bytes)!==photo.sha)fail(503,'Foto konnte nicht geprüft werden.');return bytes;
   }finally{await handle.close();}
 }
-function photosFor(db,order){return db.prepare('SELECT p.id,p.day,p.mime,p.bytes FROM photos p WHERE p.ready=1 AND EXISTS(SELECT 1 FROM robot_order_photo_keys k WHERE k.order_id=? AND k.order_no=p.order_no AND k.article=p.article) ORDER BY p.day DESC,p.created DESC,p.id DESC LIMIT 40').all(order.id).map(p=>({...p,url:'/api/admin/robot/photos/'+p.id,browserUrl:'/robot-schichtlog/photos/'+p.id}));}
+function photosFor(db,order,cursor){
+  const args=[order.id];let after='';
+  if(cursor!==null){
+    if(!UUID.test(cursor))fail(400,'Ungültige Foto-Folgeseite.');
+    const prior=db.prepare('SELECT p.day,p.created,p.id FROM photos p WHERE '+photoMatch+' AND p.id=?').get(order.id,cursor);
+    if(!prior)fail(400,'Ungültige Foto-Folgeseite.');
+    after=' AND (p.day,p.created,p.id)<(?,?,?)';args.push(prior.day,prior.created,prior.id);
+  }
+  const rows=db.prepare('SELECT p.id,p.day,p.mime,p.bytes FROM photos p WHERE '+photoMatch+after+' ORDER BY p.day DESC,p.created DESC,p.id DESC LIMIT 41').all(...args);
+  return {photos:rows.slice(0,40).map(p=>({...p,url:'/api/admin/robot/photos/'+p.id,browserUrl:'/robot-schichtlog/photos/'+p.id})),photosNextCursor:rows.length>40?rows[39].id:null};
+}
 async function admin(service,store,req,url){
   const {user,recheck}=await operator(service,req),db=store.db,route=url.pathname;
   if(route==='/api/admin/robot/orders'&&req.method==='GET'){
@@ -187,8 +200,9 @@ async function admin(service,store,req,url){
   if(!match||!UUID.test(match[1]))fail(404,'Unbekannte Auftragsadresse.');
   const existing=rowFor(db,match[1],user.id);if(!existing)fail(404,'Auftragseintrag nicht gefunden.');
   if(req.method==='GET'&&!match[2]){
+    if([...url.searchParams.keys()].some(k=>k!=='photoCursor')||url.searchParams.getAll('photoCursor').length>1)fail(400,'Unbekannter Foto-Filter.');
     const order=orderView(db,existing);
-    return {order,photos:photosFor(db,order),conflicts:db.prepare('SELECT id,data,deleted,base_revision,created_at FROM robot_order_conflicts WHERE order_id=? AND resolved_at IS NULL ORDER BY created_at DESC LIMIT 20').all(existing.id).map(c=>({id:c.id,data:JSON.parse(c.data),deleted:!!c.deleted,baseRevision:c.base_revision,createdAt:c.created_at}))};
+    return {order,...photosFor(db,order,url.searchParams.get('photoCursor')),conflicts:db.prepare('SELECT id,data,deleted,base_revision,created_at FROM robot_order_conflicts WHERE order_id=? AND resolved_at IS NULL ORDER BY created_at DESC LIMIT 20').all(existing.id).map(c=>({id:c.id,data:JSON.parse(c.data),deleted:!!c.deleted,baseRevision:c.base_revision,createdAt:c.created_at}))};
   }
   if(!(['PATCH','DELETE'].includes(req.method)&&!match[2]||req.method==='POST'&&match[2]))fail(405,'Diese Auftragsaktion wird nicht unterstützt.');
   const input=await body(req);keys(input,req.method==='PATCH'?['expectedRevision','changes']:['expectedRevision']);revision(input.expectedRevision);

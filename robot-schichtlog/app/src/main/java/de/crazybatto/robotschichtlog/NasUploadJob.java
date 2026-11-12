@@ -27,8 +27,17 @@ public final class NasUploadJob extends JobService {
         run.task = WORKER.submit(() -> {
             boolean retry = true;
             try {
-                retry = NasSync.uploadPending(getApplicationContext());
-                retry = RobotOrderSync.run(getApplicationContext()) || retry;
+                // Small order snapshots must not wait behind large photo uploads.
+                retry = RobotOrderSync.run(getApplicationContext());
+                if (!Thread.currentThread().isInterrupted()) {
+                    OrderPhotos.recoverForUpload(getApplicationContext());
+                    retry = NasSync.uploadPending(getApplicationContext()) || retry;
+                }
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                retry = true;
+            } catch (Exception unavailable) {
+                retry = true;
             } finally {
                 boolean requestRetry = retry;
                 main.post(() -> {

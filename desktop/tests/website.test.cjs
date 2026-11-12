@@ -64,6 +64,17 @@ test('Robot queries safely encode text and tombstones, restores and conflicts ca
   assert.equal(f.calls.length,count);
 });
 
+test('Robot photo pagination remains on its fixed authenticated detail route',async()=>{
+  const f=fixture(basic);await f.login();const id=USER.id;
+  await f.service.run('website.request',{operation:'robot.detail',body:{id,photoCursor:id}});
+  assert.equal(f.calls.at(-1).url,`https://crazybatto.de/api/admin/robot/orders/${id}?photoCursor=${id}`);
+  assert.equal(f.calls.at(-1).options.headers.Authorization,'Bearer '+TOKEN);
+  const count=f.calls.length;
+  for(const photoCursor of ['../secret','x&admin=true','',42])await assert.rejects(f.service.run('website.request',{operation:'robot.detail',body:{id,photoCursor}}));
+  for(const suffix of [`?photoCursor=${id}&other=1`,`?photoCursor=${id}&photoCursor=${id}`,`?photoCursor=${id}#x`])await assert.rejects(f.service.transport('https://crazybatto.de',`/api/admin/robot/orders/${id}${suffix}`));
+  assert.equal(f.calls.length,count);
+});
+
 test('private PC and Robot image previews retain bounded raster data but reject markup and oversized data',async()=>{
   let preview={mimeType:'image/png',dataUrl:'data:image/png;base64,'+Buffer.alloc(32000,1).toString('base64')};
   const f=fixture(url=>url.endsWith('/api/account/login')?reply(loginReply()):reply({...preview,token:TOKEN}));await f.login();

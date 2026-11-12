@@ -17,10 +17,15 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.OpenableColumns;
 import android.text.InputType;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.text.InputFilter;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -82,6 +87,13 @@ public class MainActivity extends Activity {
     private boolean manualForm;
     private boolean savingMedia;
     private Bundle parkedDraft;
+    private String workDraftIdentity;
+    private EditText[] workInputs;
+    private Spinner[] workChoices;
+    private CheckBox workImportant;
+    private boolean draftsArmed;
+    private boolean showingDetails;
+    private final Runnable persistDraft = this::persistVisibleDraft;
 
     private List<Record> currentHistoryRecords = new ArrayList<>();
     private Integer currentRobotFilter = null;
@@ -109,9 +121,11 @@ public class MainActivity extends Activity {
         int flags = decor.getSystemUiVisibility();
         decor.setSystemUiVisibility(design.dark ? (flags & ~lightBars) : (flags | lightBars));
         db = new DbHelper(this);
+        parkedDraft = FormDraftStore.load(this, "manual", "manual-v1");
         buildShell();
         if (savedInstanceState != null) pickerTarget = restoreTarget(savedInstanceState.getBundle("photoTarget"));
-        if (savedInstanceState != null) parkedDraft = savedInstanceState.getBundle("parkedDraft");
+        if (savedInstanceState != null && savedInstanceState.getBundle("parkedDraft") != null)
+            parkedDraft = savedInstanceState.getBundle("parkedDraft");
         if (savedInstanceState != null && savedInstanceState.getBoolean("manualForm")) {
             showNewEntry();
             restoreDraft(savedInstanceState);
@@ -132,8 +146,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         clockHandler.removeCallbacks(clockTick);
+        clockHandler.removeCallbacks(persistDraft);
         if (db != null) db.close();
         super.onDestroy();
+    }
+
+    @Override protected void onPause() {
+        persistVisibleDraft();
+        super.onPause();
     }
 
     private void buildShell() {
@@ -229,7 +249,10 @@ public class MainActivity extends Activity {
 
     private void updateClock() {
         long now = System.currentTimeMillis();
-        liveStatus.setText(ShiftUtils.getShift(now) + "  ·  " + ShiftUtils.formatDateTime(now));
+        ActiveJob job = db.getActiveJob();
+        String shift = job != null && !job.signedOut && job.sessionShift != null && !job.sessionShift.isEmpty()
+                ? job.sessionShift : ShiftUtils.getShiftForSignIn(now);
+        liveStatus.setText(shift + "  ·  " + ShiftUtils.formatDateTime(now));
     }
 
     private void showJob() {
@@ -246,6 +269,10 @@ public class MainActivity extends Activity {
         ActiveJob job = db.getActiveJob();
         long now = System.currentTimeMillis();
         OrderDesignHeader.addTo(this, root, job, now);
+        if (job != null && job.snapshotNotice != null && !job.snapshotNotice.isEmpty()) {
+            LinearLayout notice = detailCard(root, "Hinweis zum gespeicherten Stand");
+            notice.addView(detailLine("Control Center", job.snapshotNotice));
+        }
 
         if (job == null) {
 
@@ -264,8 +291,8 @@ public class MainActivity extends Activity {
             EditText personnel = addPersonnelField(root);
             personnel.setId(R.id.start_personnel);
 
-            root.addView(label("Artikelnummer"));
-            EditText article = edit("Optional: Artikel-/Teilenummer", InputType.TYPE_CLASS_TEXT);
+            root.addView(label("Artikelnummer · gespeicherte HE-Nummern"));
+            EditText article = articleField();
             article.setId(R.id.start_article);
             root.addView(article, fieldLp());
 
@@ -274,13 +301,15 @@ public class MainActivity extends Activity {
             program.setId(R.id.start_program);
             root.addView(program, fieldLp());
 
-            root.addView(statCard("Aktuelle Schicht", ShiftUtils.getShift(now), ShiftUtils.formatDateTime(now)));
+            root.addView(statCard("Schicht bei Anmeldung", ShiftUtils.getShiftForSignIn(now),
+                    "Ab 15 Minuten vor Beginn zählt bereits die nächste Schicht."));
 
-            Button start = actionButton("AUF AUFTRAG ANMELDEN", true);
+            Button start = actionButton("AUFTRAG STARTEN", true);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, dp(56));
             lp.topMargin = dp(12);
             root.addView(start, lp);
+            configureWorkDraft("start", new EditText[]{order, personnel, article, program}, new Spinner[]{robot}, null);
             start.setOnClickListener(v -> {
                 String orderNumber = order.getText().toString().trim();
                 if (orderNumber.isEmpty()) {
@@ -296,11 +325,12 @@ public class MainActivity extends Activity {
                 entry.orderNumber = orderNumber;
                 entry.articleNumber = article.getText().toString().trim();
                 entry.programInfo = program.getText().toString().trim();
-                entry.shift = ShiftUtils.getShift(entry.timestamp);
+                entry.shift = ShiftUtils.getShiftForSignIn(entry.timestamp);
                 entry.personnelNumber = number;
                 entry.source = entry.eventType = "Auftrag gestartet";
                 try {
                     db.startJob(entry);
+                    clearWorkDraft();
                     NasSync.schedule(this);
                     Toast.makeText(this, "Auf Auftrag " + orderNumber + " angemeldet", Toast.LENGTH_LONG).show();
                     showJob();
@@ -308,25 +338,65 @@ public class MainActivity extends Activity {
                     showError("Auftrag konnte nicht gestartet werden", ex.getMessage());
                 }
             });
-        } else {
+        } else if (job.signedOut) {
+            root.addView(statCard("Schicht beendet · Auftrag bleibt offen", job.orderNumber,
+                    "Abgemeldet am " + ShiftUtils.formatDateTime(job.shiftEndedAt)));
+            LinearLayout handoverCard = detailCard(root, "Stand der letzten Schicht");
+            handoverCard.addView(detailLine("Gespeicherte Menge", String.valueOf(job.draftQuantity)));
+            handoverCard.addView(detailLine("Übergabe", emptyDash(job.draftHandoverNote)));
+            handoverCard.addView(detailLine("Notiz", emptyDash(job.draftNote)));
+            handoverCard.addView(detailLine("Teile fehlen", emptyDash(job.draftMissingParts)));
             addPhotoSection(root, jobEvent(job, "", "Auftragsfotos"), design.dark);
             EditText personnel = addPersonnelField(root);
             personnel.setId(R.id.job_personnel);
+            root.addView(statCard("Bei Anmeldung", ShiftUtils.getShiftForSignIn(now),
+                    "Neue Schicht: Die Menge beginnt bei 0. Die Übergabe bleibt erhalten."));
+            Button resume = formAction(root, "AUF OFFENEN AUFTRAG ANMELDEN", true);
+            configureWorkDraft(workIdentity(job), new EditText[]{personnel}, new Spinner[0], null);
+            resume.setOnClickListener(v -> {
+                String number = requirePersonnel(personnel);
+                if (number == null) return;
+                try {
+                    db.resumeShift(job, number, System.currentTimeMillis());
+                    clearWorkDraft();
+                    NasSync.schedule(this);
+                    Toast.makeText(this, "Neue Schicht angemeldet · Auftrag übernommen", Toast.LENGTH_LONG).show();
+                    showJob();
+                } catch (Exception ex) { showError("Anmeldung fehlgeschlagen", ex.getMessage()); }
+            });
+        } else {
+            root.addView(statCard("Angemeldete Schicht", emptyDash(job.sessionShift),
+                    "Seit " + ShiftUtils.formatDateTime(job.shiftStartedAt)
+                    + (job.draftSavedAt > 0 ? " · Gespeichert: " + ShiftUtils.formatDateTime(job.draftSavedAt) : "")));
+            addPhotoSection(root, jobEvent(job, "", "Auftragsfotos"), design.dark);
+            EditText personnel = addPersonnelField(root);
+            personnel.setId(R.id.job_personnel);
+            personnel.setText(job.personnelNumber);
+            personnel.setKeyListener(null);
+            personnel.setFocusable(false);
 
-            root.addView(label("Produzierte Menge beim Beenden *"));
-            EditText quantity = edit("z. B. 420", InputType.TYPE_CLASS_NUMBER);
+            root.addView(label("Menge dieser Schicht (Gesamtstand) *"));
+            EditText quantity = edit("Aktueller Gesamtstand, z. B. 420", InputType.TYPE_CLASS_NUMBER);
             quantity.setId(R.id.job_quantity);
+            quantity.setText(String.valueOf(job.draftQuantity));
             root.addView(quantity, fieldLp());
+            TextView quantityHint = text("Speichern ersetzt diesen Stand. Die Menge wird nicht erneut hinzugezählt.", 12, false, design.muted);
+            quantityHint.setPadding(dp(3), dp(4), dp(3), dp(5));
+            root.addView(quantityHint);
 
             root.addView(label("Ereignis / Vorgang"));
             Spinner event = spinner(new String[]{
                     "Kein Ereignis", "Störung", "Material", "Qualität", "Wartung", "Umrüstung", "Sonstiges"});
             event.setId(R.id.job_event);
+            for (int i = 0; i < event.getCount(); i++)
+                if (event.getItemAtPosition(i).equals(job.draftEventType)) event.setSelection(i);
             root.addView(event, fieldLp());
 
             root.addView(label("Teile fehlen"));
             EditText missingParts = edit("Optional: Was fehlt? z. B. Halter, Schrauben, Rohteil …", InputType.TYPE_CLASS_TEXT);
             missingParts.setId(R.id.job_missing_parts);
+            missingParts.setText(job.draftMissingParts);
+            missingParts.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4000)});
             root.addView(missingParts, fieldLp());
 
             CheckBox important = new CheckBox(this);
@@ -336,6 +406,7 @@ public class MainActivity extends Activity {
             important.setButtonTintList(android.content.res.ColorStateList.valueOf(design.accent));
             important.setPadding(0, dp(4), 0, dp(8));
             important.setId(R.id.job_important);
+            important.setChecked(job.draftImportant);
             root.addView(important);
 
             root.addView(label("Notiz / was ist vorgefallen?"));
@@ -346,6 +417,8 @@ public class MainActivity extends Activity {
             LinearLayout.LayoutParams noteLp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, dp(116));
             note.setId(R.id.job_note);
+            note.setText(job.draftNote);
+            note.setFilters(new InputFilter[]{new InputFilter.LengthFilter(8000)});
             root.addView(note, noteLp);
 
             root.addView(label("Info für Schichtübergabe"));
@@ -357,7 +430,25 @@ public class MainActivity extends Activity {
                     ViewGroup.LayoutParams.MATCH_PARENT, dp(116));
             handLp.bottomMargin = dp(8);
             handover.setId(R.id.job_handover);
+            handover.setText(job.draftHandoverNote);
+            handover.setFilters(new InputFilter[]{new InputFilter.LengthFilter(8000)});
             root.addView(handover, handLp);
+
+            TextView draftHint = text("Eingaben bleiben auf diesem Handy erhalten. „Zwischenstand speichern“ sichert sie im Verlauf und für den Abgleich.", 12, false, design.muted);
+            draftHint.setPadding(dp(3), dp(9), dp(3), dp(3));
+            root.addView(draftHint);
+            Button save = formAction(root, "ZWISCHENSTAND SPEICHERN", true);
+            save.setOnClickListener(v -> {
+                Record draft = readJobForm(job, personnel, quantity, event, important, note, handover, missingParts);
+                if (draft == null) return;
+                try {
+                    db.saveJobDraft(job, draft);
+                    clearWorkDraft();
+                    NasSync.schedule(this);
+                    Toast.makeText(this, "Zwischenstand gespeichert · Auftrag und Schicht bleiben offen", Toast.LENGTH_LONG).show();
+                    showJob();
+                } catch (Exception ex) { showError("Zwischenstand konnte nicht gespeichert werden", ex.getMessage()); }
+            });
 
             Button saveHandover = actionButton("SCHICHTÜBERGABE SPEICHERN", false);
             LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(
@@ -371,24 +462,30 @@ public class MainActivity extends Activity {
                     handover.requestFocus();
                     return;
                 }
-                String number = requirePersonnel(personnel);
-                if (number != null) saveShiftHandover(job, number, note.getText().toString().trim(), info,
-                        missingParts.getText().toString().trim());
+                Record draft = readJobForm(job, personnel, quantity, event, important, note, handover, missingParts);
+                if (draft == null) return;
+                try {
+                    draft.source = "Schichtübergabe";
+                    db.recordJobAction(job, DbHelper.JobAction.HANDOVER, draft);
+                    clearWorkDraft();
+                    NasSync.schedule(this);
+                    Toast.makeText(this, "Schichtübergabe gespeichert", Toast.LENGTH_LONG).show();
+                    showJob();
+                } catch (Exception ex) { showError("Übergabe konnte nicht gespeichert werden", ex.getMessage()); }
             });
 
             Button pauseResume = actionButton(job.paused ? "AUFTRAG FORTSETZEN" : "AUFTRAG UNTERBRECHEN", false);
             root.addView(pauseResume, hlp);
             pauseResume.setOnClickListener(v -> {
-                String number = requirePersonnel(personnel);
-                if (number == null) return;
-                String type = job.paused ? "Auftrag fortgesetzt" : "Auftrag unterbrochen";
-                Record r = jobEvent(job, number, type);
-                r.note = note.getText().toString().trim();
-                r.handoverNote = handover.getText().toString().trim();
-                r.missingParts = missingParts.getText().toString().trim();
-                r.important = important.isChecked();
+                Record draft = readJobForm(job, personnel, quantity, event, important, note, handover, missingParts);
+                if (draft == null) return;
                 try {
-                    db.recordJobAction(job, job.paused ? DbHelper.JobAction.RESUME : DbHelper.JobAction.PAUSE, r);
+                    db.saveJobDraft(job, draft);
+                    ActiveJob current = db.getActiveJob();
+                    String type = current.paused ? "Auftrag fortgesetzt" : "Auftrag unterbrochen";
+                    Record action = jobEvent(current, draft.personnelNumber, type);
+                    db.recordJobAction(current, current.paused ? DbHelper.JobAction.RESUME : DbHelper.JobAction.PAUSE, action);
+                    clearWorkDraft();
                     NasSync.schedule(this);
                     Toast.makeText(this, type, Toast.LENGTH_SHORT).show();
                     showJob();
@@ -397,7 +494,38 @@ public class MainActivity extends Activity {
                 }
             });
 
-            Button finish = actionButton("ABMELDEN UND AUFTRAG BEENDEN", true);
+            root.addView(label("Schichtende · Datum und Uhrzeit *"));
+            EditText shiftEnd = edit("TT.MM.JJJJ HH:MM", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+            shiftEnd.setId(R.id.job_shift_end);
+            root.addView(shiftEnd, fieldLp());
+            Button nowButton = formAction(root, "Aktuelle Zeit als Schichtende einsetzen", false);
+            nowButton.setOnClickListener(v -> shiftEnd.setText(new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.GERMANY).format(new Date())));
+            TextView endHint = text("Abmelden beendet deine Schicht zur angegebenen Zeit und speichert alles. Der Auftrag bleibt für die nächste Schicht offen.", 13, false, design.muted);
+            endHint.setPadding(dp(3), dp(8), dp(3), dp(3));
+            root.addView(endHint);
+            Button signOut = formAction(root, "SCHICHT BEENDEN / ABMELDEN", false);
+            signOut.setOnClickListener(v -> {
+                Record draft = readJobForm(job, personnel, quantity, event, important, note, handover, missingParts);
+                if (draft == null) return;
+                Long endedAt = readShiftEnd(shiftEnd, job.shiftStartedAt);
+                if (endedAt == null) return;
+                new AlertDialog.Builder(this).setTitle("Schicht beenden und abmelden?")
+                        .setMessage("Schichtende: " + ShiftUtils.formatDateTime(endedAt)
+                                + "\nDer Stand wird gespeichert. Auftrag " + job.orderNumber + " bleibt offen.")
+                        .setPositiveButton("Schicht beenden", (d, w) -> {
+                            try {
+                                db.endShift(job, draft, endedAt);
+                                clearWorkDraft();
+                                NasSync.schedule(this);
+                                Toast.makeText(this, "Schicht beendet · abgemeldet · Auftrag bleibt offen", Toast.LENGTH_LONG).show();
+                                showJob();
+                            } catch (Exception ex) { showError("Abmelden fehlgeschlagen", ex.getMessage()); }
+                        }).setNegativeButton("Zurück", null).show();
+            });
+            configureWorkDraft(workIdentity(job), new EditText[]{personnel, quantity, missingParts, note, handover, shiftEnd},
+                    new Spinner[]{event}, important);
+
+            Button finish = actionButton("AUFTRAG ENDGÜLTIG BEENDEN", false);
             LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, dp(56));
             flp.topMargin = dp(10);
@@ -442,6 +570,122 @@ public class MainActivity extends Activity {
         return field;
     }
 
+    private Button formAction(LinearLayout parent, String label, boolean primary) {
+        Button button = actionButton(label, primary);
+        button.setMinHeight(dp(52));
+        button.setPadding(dp(12), dp(10), dp(12), dp(10));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.topMargin = dp(9);
+        parent.addView(button, params);
+        return button;
+    }
+
+    private Record readJobForm(ActiveJob job, EditText personnel, EditText quantity, Spinner event, CheckBox important,
+                               EditText note, EditText handover, EditText missingParts) {
+        String number = requirePersonnel(personnel);
+        if (number == null) return null;
+        int amount;
+        try { amount = Integer.parseInt(quantity.getText().toString().trim()); if (amount < 0) throw new NumberFormatException(); }
+        catch (NumberFormatException ex) { quantity.setError("Bitte den Gesamtstand dieser Schicht ab 0 eingeben"); quantity.requestFocus(); return null; }
+        Record value = jobEvent(job, number, "Zwischenstand");
+        value.quantity = amount;
+        value.eventType = event.getSelectedItem().toString();
+        value.important = important.isChecked();
+        value.note = note.getText().toString().trim();
+        value.handoverNote = handover.getText().toString().trim();
+        value.missingParts = missingParts.getText().toString().trim();
+        return value;
+    }
+
+    private Long readShiftEnd(EditText field, long startedAt) {
+        String raw = field.getText().toString().trim();
+        SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.GERMANY);
+        format.setLenient(false);
+        java.text.ParsePosition position = new java.text.ParsePosition(0);
+        Date parsed = format.parse(raw, position);
+        if (parsed == null || position.getIndex() != raw.length() || !raw.matches("[0-9]{2}\\.[0-9]{2}\\.[0-9]{4} [0-9]{2}:[0-9]{2}")) {
+            field.setError("Schichtende als TT.MM.JJJJ HH:MM eingeben"); field.requestFocus(); return null;
+        }
+        long end = parsed.getTime();
+        // The form accepts minute precision, including the current sign-in minute.
+        if (end < startedAt && end / 60000L == startedAt / 60000L) end = startedAt;
+        if (end < startedAt || end > System.currentTimeMillis()) {
+            field.setError("Schichtende muss zwischen deiner Anmeldung und jetzt liegen"); field.requestFocus(); return null;
+        }
+        return end;
+    }
+
+    private String workIdentity(ActiveJob job) {
+        return "job:" + job.startedAt + ":" + job.revision;
+    }
+
+    private void configureWorkDraft(String identity, EditText[] inputs, Spinner[] choices, CheckBox important) {
+        workDraftIdentity = identity;
+        workInputs = inputs;
+        workChoices = choices;
+        workImportant = important;
+        Bundle saved = FormDraftStore.load(this, "work", identity);
+        if (saved != null) {
+            String[] fields = saved.getStringArray("fields");
+            int[] indices = saved.getIntArray("choices");
+            if (fields != null && fields.length == inputs.length)
+                for (int i = 0; i < inputs.length; i++) inputs[i].setText(fields[i]);
+            if (indices != null && indices.length == choices.length)
+                for (int i = 0; i < choices.length; i++) choices[i].setSelection(Math.max(0, Math.min(choices[i].getCount() - 1, indices[i])));
+            if (important != null) important.setChecked(saved.getBoolean("important"));
+        }
+        draftsArmed = true;
+        watchDraft(inputs, choices, important);
+    }
+
+    private void watchDraft(EditText[] inputs, Spinner[] choices, CheckBox important) {
+        TextWatcher watcher = new TextWatcher() {
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) { scheduleDraft(); }
+            public void afterTextChanged(Editable s) {}
+        };
+        for (EditText input : inputs) input.addTextChangedListener(watcher);
+        for (Spinner choice : choices) choice.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) { scheduleDraft(); }
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        if (important != null) important.setOnCheckedChangeListener((button, checked) -> scheduleDraft());
+    }
+
+    private void scheduleDraft() {
+        if (!draftsArmed) return;
+        clockHandler.removeCallbacks(persistDraft);
+        clockHandler.postDelayed(persistDraft, 400);
+    }
+
+    private void persistVisibleDraft() {
+        clockHandler.removeCallbacks(persistDraft);
+        if (!draftsArmed) return;
+        if (manualForm && !savingMedia && orderInput != null) {
+            Bundle draft = new Bundle();
+            saveDraft(draft);
+            FormDraftStore.save(this, "manual", "manual-v1", draft);
+        }
+        if ("auftrag".equals(selectedScreen) && workInputs != null && workDraftIdentity != null) {
+            Bundle draft = new Bundle();
+            String[] values = new String[workInputs.length];
+            for (int i = 0; i < values.length; i++) values[i] = workInputs[i].getText().toString();
+            int[] choices = new int[workChoices.length];
+            for (int i = 0; i < choices.length; i++) choices[i] = workChoices[i].getSelectedItemPosition();
+            draft.putStringArray("fields", values);
+            draft.putIntArray("choices", choices);
+            draft.putBoolean("important", workImportant != null && workImportant.isChecked());
+            FormDraftStore.save(this, "work", workDraftIdentity, draft);
+        }
+    }
+
+    private void clearWorkDraft() {
+        clockHandler.removeCallbacks(persistDraft);
+        workInputs = null;
+        workDraftIdentity = null;
+        FormDraftStore.clear(this, "work");
+    }
+
     private String requirePersonnel(EditText field) {
         String number = field.getText().toString().trim();
         if (number.matches("[0-9]+")) return number;
@@ -458,26 +702,10 @@ public class MainActivity extends Activity {
         r.programInfo = job.programInfo;
         r.personnelNumber = number;
         r.timestamp = System.currentTimeMillis();
-        r.shift = ShiftUtils.getShift(r.timestamp);
+        r.shift = job.sessionShift == null || job.sessionShift.isEmpty() ? ShiftUtils.getShift(r.timestamp) : job.sessionShift;
         r.startedAt = job.startedAt;
         r.source = r.eventType = source;
         return r;
-    }
-
-    private void saveShiftHandover(ActiveJob job, String number, String note, String handover, String missingParts) {
-        Record r = jobEvent(job, number, "Schichtübergabe");
-        r.missingParts = missingParts;
-        r.important = true;
-        r.note = note;
-        r.handoverNote = handover;
-        try {
-            db.recordJobAction(job, DbHelper.JobAction.HANDOVER, r);
-            NasSync.schedule(this);
-            Toast.makeText(this, "Schichtübergabe gespeichert", Toast.LENGTH_LONG).show();
-            showJob();
-        } catch (Exception ex) {
-            showError("Übergabe konnte nicht gespeichert werden", ex.getMessage());
-        }
     }
 
     private void finishActiveJob(ActiveJob job, String number, int quantity, String eventType, boolean important,
@@ -492,6 +720,7 @@ public class MainActivity extends Activity {
         r.endedAt = r.timestamp;
         try {
             db.recordJobAction(job, DbHelper.JobAction.FINISH, r);
+            clearWorkDraft();
             NasSync.schedule(this);
             Toast.makeText(this, "Auftrag beendet · Dauer " + durationText(job.startedAt, r.endedAt), Toast.LENGTH_LONG).show();
             showJob();
@@ -528,7 +757,7 @@ public class MainActivity extends Activity {
         form.addView(orderInput, fieldLp());
 
         form.addView(label("Artikelnummer"));
-        articleInput = edit("Optional: Artikel-/Teilenummer", InputType.TYPE_CLASS_TEXT);
+        articleInput = articleField();
         form.addView(articleInput, fieldLp());
 
         form.addView(label("Programm (optional)"));
@@ -627,6 +856,9 @@ public class MainActivity extends Activity {
             restoreDraft(parkedDraft);
             parkedDraft = null;
         }
+        draftsArmed = true;
+        watchDraft(new EditText[]{orderInput, articleInput, programInput, missingPartsInput, quantityInput, noteInput, handoverInput},
+                new Spinner[]{robotSpinner, shiftSpinner, eventSpinner}, importantCheck);
     }
 
     private void saveEntry() {
@@ -798,6 +1030,10 @@ public class MainActivity extends Activity {
                     return;
                 }
                 if (manual) {
+                    FormDraftStore.clear(this, "manual");
+                    parkedDraft = null;
+                    manualForm = false;
+                    draftsArmed = false;
                     pendingAttachments.clear();
                     showNewEntry();
                 } else refreshPhotos();
@@ -836,6 +1072,7 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onSaveInstanceState(Bundle state) {
+        persistVisibleDraft();
         super.onSaveInstanceState(state);
         state.putString("screen", selectedScreen);
         if ("verlauf".equals(selectedScreen)) {
@@ -874,11 +1111,15 @@ public class MainActivity extends Activity {
 
     private void restoreDraft(Bundle state) {
         String[] fields = state.getStringArray("fields");
-        if (fields == null) return;
+        if (fields == null || fields.length != 7) return;
         EditText[] inputs = {orderInput, articleInput, programInput, missingPartsInput, quantityInput, noteInput, handoverInput};
         for (int i = 0; i < inputs.length; i++) inputs[i].setText(fields[i]);
         int[] choices = state.getIntArray("choices");
-        robotSpinner.setSelection(choices[0]); shiftSpinner.setSelection(choices[1]); eventSpinner.setSelection(choices[2]);
+        if (choices != null && choices.length == 3) {
+            robotSpinner.setSelection(Math.max(0, Math.min(7, choices[0])));
+            shiftSpinner.setSelection(Math.max(0, Math.min(3, choices[1])));
+            eventSpinner.setSelection(Math.max(0, Math.min(6, choices[2])));
+        }
         importantCheck.setChecked(state.getBoolean("important"));
         ArrayList<String> media = state.getStringArrayList("pending");
         pendingAttachments.clear();
@@ -1091,73 +1332,135 @@ public class MainActivity extends Activity {
     }
 
     private void showRecordDetails(Record r) {
+        setActiveNav(navHistory);
+        showingDetails = true;
+        content.removeAllViews();
         ScrollView scroll = new ScrollView(this);
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(dp(18), dp(8), dp(18), dp(8));
+        box.setPadding(dp(2), dp(6), dp(2), dp(24));
         scroll.addView(box);
+        Button back = formAction(box, "‹ Zurück zum Verlauf", false);
+        back.setOnClickListener(v -> showHistory(historyFilters()));
+        TextView heading = text("Auftrag " + r.orderNumber, 23, true, design.text);
+        heading.setPadding(dp(3), dp(16), dp(3), dp(5));
+        box.addView(heading);
+        box.addView(text("Roboter " + r.robot + " · Eintrag #" + r.id + " · " + ShiftUtils.formatDateTime(r.timestamp), 13, false, design.muted));
 
-        box.addView(detailLine("Roboter", "Roboter " + r.robot));
-        box.addView(detailLine("Auftragsnummer", r.orderNumber));
+        LinearLayout status = detailCard(box, r.important ? "WICHTIG · " + emptyDash(r.source) : emptyDash(r.source));
+        status.addView(detailLine("Schicht", emptyDash(r.shift)));
+        status.addView(detailLine("Produktionsmenge", String.valueOf(r.quantity)));
+        status.addView(detailLine("Ereignis", emptyDash(r.eventType)));
         if (r.personnelNumber != null && !r.personnelNumber.isEmpty()) {
-            box.addView(detailLine("Personalnummer", r.personnelNumber));
+            status.addView(detailLine("Personalnummer", r.personnelNumber));
         }
-        box.addView(detailLine("Artikelnummer", emptyDash(r.articleNumber)));
-        box.addView(detailLine("Programm", emptyDash(r.programInfo)));
-        box.addView(detailLine("Teile fehlen", emptyDash(r.missingParts)));
-        box.addView(detailLine("Produktionsmenge", String.valueOf(r.quantity)));
-        box.addView(detailLine("Zeit", ShiftUtils.formatDateTime(r.timestamp)));
-        box.addView(detailLine("Schicht", r.shift));
-        box.addView(detailLine("Ereignis", r.eventType + (r.important ? " · WICHTIG" : "")));
-        box.addView(detailLine("Typ", (r.source == null || r.source.isEmpty()) ? "Eintrag" : r.source));
+        LinearLayout order = detailCard(box, "Auftragsdaten");
+        order.addView(detailLine("Artikelnummer", emptyDash(r.articleNumber)));
+        order.addView(detailLine("Programm", emptyDash(r.programInfo)));
         if (r.startedAt > 0) {
-            box.addView(detailLine("Auftrag gestartet", ShiftUtils.formatDateTime(r.startedAt)));
+            order.addView(detailLine("Auftrag gestartet", ShiftUtils.formatDateTime(r.startedAt)));
         }
         if (r.endedAt > 0) {
-            box.addView(detailLine("Auftrag beendet", ShiftUtils.formatDateTime(r.endedAt)));
-            box.addView(detailLine("Dauer", durationText(r.startedAt, r.endedAt)));
+            order.addView(detailLine("Schicht beendet".equals(r.source) ? "Schichtende" : "Auftrag beendet", ShiftUtils.formatDateTime(r.endedAt)));
+            if (r.startedAt > 0 && "Auftrag beendet".equals(r.source))
+                order.addView(detailLine("Auftragsdauer", durationText(r.startedAt, r.endedAt)));
         }
-        box.addView(detailLine("Notiz", (r.note == null || r.note.isEmpty()) ? "—" : r.note));
-        box.addView(detailLine("Schichtübergabe", (r.handoverNote == null || r.handoverNote.isEmpty()) ? "—" : r.handoverNote));
+        LinearLayout notes = detailCard(box, "Notizen & Übergabe");
+        notes.addView(detailLine("Teile fehlen", emptyDash(r.missingParts)));
+        notes.addView(detailLine("Notiz", emptyDash(r.note)));
+        notes.addView(detailLine("Schichtübergabe", emptyDash(r.handoverNote)));
 
-        addPhotoSection(box, r, false);
+        addPhotoSection(box, r, design.dark);
         List<Attachment> attachments = db.getAttachments(r.id);
         attachments.removeIf(a -> a.mimeType.startsWith("image/"));
         if (!attachments.isEmpty()) {
-            TextView mediaTitle = text("Weitere Anhänge", 14, true, design.text);
-            mediaTitle.setPadding(0, dp(12), 0, dp(4));
-            box.addView(mediaTitle);
+            LinearLayout media = detailCard(box, "Weitere Anhänge");
             for (Attachment a : attachments) {
-                Button open = new Button(this);
-                open.setText(a.displayName);
-                open.setAllCaps(false);
+                Button open = formAction(media, a.displayName, false);
                 open.setOnClickListener(v -> openAttachment(a));
-                box.addView(open);
             }
         }
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Eintrag #" + r.id)
-                .setView(scroll)
-                .setPositiveButton("Schließen", null)
-                .setNegativeButton("Löschen", null)
-                .create();
-        dialog.setOnShowListener(d -> {
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(design.danger);
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(v ->
+        Button share = formAction(box, "AUFTRAG ALS TXT TEILEN", true);
+        share.setOnClickListener(v -> shareOrder(r));
+        TextView shareHint = text("Alle gespeicherten Einträge dieses Auftrags auf Roboter " + r.robot
+                + " werden als Textdatei zusammengestellt. Du wählst danach selbst die App und den Empfänger.", 12, false, design.muted);
+        shareHint.setPadding(dp(3), dp(8), dp(3), dp(8));
+        box.addView(shareHint);
+        List<Record> related = orderRecords(r);
+        if (related.size() > 1) {
+            LinearLayout timeline = detailCard(box, "Verlauf dieses Auftrags");
+            for (Record entry : related) {
+                Button item = formAction(timeline, ShiftUtils.formatDateTime(entry.timestamp) + " · " + emptyDash(entry.source)
+                        + "\n" + emptyDash(entry.shift) + " · Menge " + entry.quantity + (entry.id == r.id ? " · geöffnet" : ""), false);
+                item.setOnClickListener(v -> showRecordDetails(entry));
+            }
+        }
+        Button delete = formAction(box, "Eintrag #" + r.id + " in den Papierkorb verschieben", false);
+        delete.setTextColor(design.danger);
+        delete.setOnClickListener(v ->
                     new AlertDialog.Builder(this)
                             .setTitle("Eintrag löschen?")
                             .setMessage("Der Eintrag wird in den Papierkorb verschoben. Seine Fotos bleiben erhalten. Bei aktivierter Synchronisierung kann er im Control Center wiederhergestellt werden.")
                             .setPositiveButton("Löschen", (d2, w) -> {
                                 OrderPhotos.deleteEntry(this, db, r.id);
                                 NasSync.schedule(this);
-                                dialog.dismiss();
-                                showHistory();
+                                showHistory(historyFilters());
                             })
                             .setNegativeButton("Abbrechen", null)
                             .show());
-        });
-        dialog.show();
+        content.addView(scroll);
+    }
+
+    private LinearLayout detailCard(LinearLayout parent, String title) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(15), dp(14), dp(15), dp(12));
+        card.setBackground(roundRect(design.surface, design.border, 14));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.topMargin = dp(12);
+        parent.addView(card, params);
+        TextView heading = text(title, 16, true, design.accent);
+        if (android.os.Build.VERSION.SDK_INT >= 28) heading.setAccessibilityHeading(true);
+        card.addView(heading);
+        return card;
+    }
+
+    private Bundle historyFilters() {
+        Bundle filters = new Bundle();
+        filters.putInt("robot", currentRobotFilter == null ? 0 : currentRobotFilter);
+        filters.putString("shift", currentShiftFilter);
+        filters.putString("query", currentSearch);
+        filters.putString("date", currentHistoryDate);
+        return filters;
+    }
+
+    @Override public void onBackPressed() {
+        if (showingDetails) { showHistory(historyFilters()); return; }
+        persistVisibleDraft();
+        super.onBackPressed();
+    }
+
+    private List<Record> orderRecords(Record selected) {
+        List<Record> records = db.getRecords(selected.robot, null, selected.orderNumber);
+        records.removeIf(entry -> !java.util.Objects.equals(selected.orderNumber, entry.orderNumber));
+        records.sort(java.util.Comparator.comparingLong(entry -> entry.timestamp));
+        return records;
+    }
+
+    private void shareOrder(Record selected) {
+        try {
+            List<Record> records = orderRecords(selected);
+            java.util.Map<Long, List<Attachment>> attachments = new java.util.HashMap<>();
+            for (Record record : records) attachments.put(record.id, db.getAttachments(record.id));
+            Uri uri = OrderTextProvider.write(this, selected.orderNumber, OrderTextExport.render(selected, records, attachments));
+            Intent send = new Intent(Intent.ACTION_SEND);
+            send.setType("text/plain");
+            send.putExtra(Intent.EXTRA_SUBJECT, "Robot SchichtLog · Auftrag " + selected.orderNumber);
+            send.putExtra(Intent.EXTRA_STREAM, uri);
+            send.setClipData(ClipData.newUri(getContentResolver(), "Auftrag als Textdatei", uri));
+            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(send, "Auftrag als TXT teilen"));
+        } catch (Exception ex) { showError("Textdatei konnte nicht geteilt werden", ex.getMessage()); }
     }
 
     private void openAttachment(Attachment a) {
@@ -1326,6 +1629,13 @@ public class MainActivity extends Activity {
     }
 
     private void setActiveNav(Button active) {
+        persistVisibleDraft();
+        draftsArmed = false;
+        workInputs = null;
+        workChoices = null;
+        workImportant = null;
+        workDraftIdentity = null;
+        showingDetails = false;
         selectedScreen = active == navHistory ? "verlauf" : active == navStats ? "auswertung"
                 : active == navPhotos ? "fotos" : active == navNew ? "eintrag" : "auftrag";
         photoSearchOrder = null;
@@ -1413,6 +1723,61 @@ public class MainActivity extends Activity {
         return e;
     }
 
+    private AutoCompleteTextView articleField() {
+        AutoCompleteTextView field = new AutoCompleteTextView(this);
+        field.setHint("HE … · Nummer tippen oder Vorschlag wählen");
+        field.setHintTextColor(design.muted);
+        field.setTextColor(design.text);
+        field.setTextSize(15);
+        field.setSingleLine(true);
+        field.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+        field.setFilters(new InputFilter[]{new InputFilter.LengthFilter(256)});
+        field.setPadding(dp(13), dp(10), dp(13), dp(10));
+        field.setBackground(roundRect(design.surface, design.border, 12));
+        field.setDropDownBackgroundDrawable(roundRect(design.surface, design.border, 12));
+        field.setThreshold(1);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line,
+                db.getArticleNumbers("")) {
+            private android.widget.Filter queryFilter;
+            @Override public android.widget.Filter getFilter() {
+                if (queryFilter != null) return queryFilter;
+                queryFilter = new android.widget.Filter() {
+                    @Override protected FilterResults performFiltering(CharSequence constraint) {
+                        FilterResults result = new FilterResults();
+                        List<String> values;
+                        try { values = db.getArticleNumbers(constraint == null ? "" : constraint.toString()); }
+                        catch (Exception ex) { values = new ArrayList<>(); }
+                        result.values = values;
+                        result.count = values.size();
+                        return result;
+                    }
+                    @Override @SuppressWarnings("unchecked")
+                    protected void publishResults(CharSequence constraint, FilterResults results) {
+                        if (isDestroyed()) return;
+                        setNotifyOnChange(false);
+                        clear();
+                        addAll((List<String>)results.values);
+                        notifyDataSetChanged();
+                    }
+                    @Override public CharSequence convertResultToString(Object result) { return result == null ? "" : result.toString(); }
+                };
+                return queryFilter;
+            }
+            @Override public View getView(int position, View recycled, ViewGroup parent) {
+                TextView row = (TextView)super.getView(position, recycled, parent);
+                row.setTextColor(design.text);
+                row.setBackgroundColor(design.surface);
+                row.setTextSize(15);
+                row.setMinHeight(dp(48));
+                row.setPadding(dp(14), dp(10), dp(14), dp(10));
+                return row;
+            }
+        };
+        field.setAdapter(adapter);
+        field.setOnClickListener(v -> { if (adapter.getCount() > 0) field.showDropDown(); });
+        return field;
+    }
+
     private Spinner spinner(String[] values) {
         Spinner s = new Spinner(this);
         DesignSpinnerAdapter adapter = new DesignSpinnerAdapter(this, values);
@@ -1488,6 +1853,13 @@ public class MainActivity extends Activity {
     }
 
     private void showError(String title, String message) {
+        if (message != null && message.contains("inzwischen geändert")) {
+            new AlertDialog.Builder(this).setTitle("Neuerer Auftragsstand vorhanden")
+                    .setMessage("Der Auftrag wurde inzwischen geändert. Beim Laden werden die Felder durch den neueren Stand ersetzt. Prüfe deine noch nicht gespeicherten Eingaben vorher.")
+                    .setPositiveButton("Aktuellen Stand laden", (d, w) -> showJob())
+                    .setNegativeButton("Zurück zu meinen Eingaben", null).show();
+            return;
+        }
         new AlertDialog.Builder(this)
                 .setTitle(title)
                 .setMessage(message == null || message.isEmpty() ? "Unbekannter Fehler" : message)
